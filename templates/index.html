@@ -821,7 +821,340 @@
             max-width: 280px;
             line-height: 1.5;
         }
+
+        /* Health Profile Options */
+        .health-opt {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border-glass);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            background: rgba(255,255,255,0.03);
+        }
+        .health-opt:hover, .health-opt:has(input:checked) {
+            border-color: var(--primary);
+            background: rgba(0,255,183,0.07);
+            color: var(--primary);
+        }
+        .health-opt input { display:none; }
+
+        /* Pollutant Tooltip */
+        .pollutant-label { position: relative; cursor: help; }
+        .pollutant-label .tip {
+            display: none;
+            position: absolute;
+            bottom: 130%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            border: 1px solid var(--border-glass);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 12px;
+            width: 200px;
+            color: var(--text-main);
+            z-index: 300;
+            line-height: 1.5;
+            white-space: normal;
+            pointer-events: none;
+        }
+        .pollutant-label:hover .tip { display: block; }
+
+        /* ===================== LIGHT MODE ===================== */
+        body.light-mode {
+            --bg-dark: #eef2f7;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --border-glass: rgba(0, 0, 0, 0.09);
+            --text-main: #0f172a;
+            --text-muted: #4b5563;
+            --primary: #00a878;
+            --secondary: #0284c7;
+            background-color: var(--bg-dark);
+        }
+
+        /* Ambient background override */
+        body.light-mode::before {
+            background:
+                radial-gradient(circle at 10% 20%, rgba(0, 168, 120, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(2, 132, 199, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.04) 0%, transparent 50%);
+        }
+
+        /* Header */
+        body.light-mode header {
+            background: rgba(255, 255, 255, 0.92);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 1px 16px rgba(0,0,0,0.07);
+        }
+        body.light-mode .logo {
+            color: #0f172a;
+        }
+        body.light-mode .developer-badge {
+            background: rgba(0, 168, 120, 0.1);
+            border-color: rgba(0, 168, 120, 0.25);
+            color: #00a878;
+        }
+
+        /* Tabs */
+        body.light-mode .tabs-container {
+            background: rgba(255, 255, 255, 0.8);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        body.light-mode .tab-btn {
+            color: #4b5563;
+        }
+        body.light-mode .tab-btn:hover {
+            color: #00a878;
+            background: rgba(0, 168, 120, 0.07);
+        }
+        body.light-mode .tab-btn.active {
+            color: #00a878;
+            border-bottom-color: #00a878;
+        }
+
+        /* Cards */
+        body.light-mode .card {
+            background: #ffffff;
+            border: 1px solid rgba(0, 0, 0, 0.07);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+        }
+        body.light-mode .card-title {
+            color: #0f172a;
+        }
+
+        /* Form elements */
+        body.light-mode .form-group label {
+            color: #374151;
+        }
+        body.light-mode input[type="text"],
+        body.light-mode input[type="number"],
+        body.light-mode select,
+        body.light-mode textarea {
+            background: #f8fafc !important;
+            border-color: rgba(0, 0, 0, 0.12) !important;
+            color: #0f172a !important;
+        }
+        body.light-mode input::placeholder {
+            color: #9ca3af !important;
+        }
+        body.light-mode select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234b5563' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        }
+
+        /* Badges & info cards */
+        body.light-mode .badge-card {
+            background: #f1f5f9;
+            border: 1px solid rgba(0, 0, 0, 0.07);
+        }
+        body.light-mode .badge-label {
+            color: #6b7280;
+        }
+        body.light-mode .badge-value {
+            color: #0f172a;
+            font-weight: 700;
+        }
+        body.light-mode .badge-icon {
+            background: rgba(0, 168, 120, 0.1);
+            color: #00a878;
+        }
+
+        /* AQI gauge inner */
+        body.light-mode .aqi-gauge-inner {
+            background: #f8fafc;
+            box-shadow: inset 0 0 0 6px rgba(0,0,0,0.05), 0 0 30px rgba(0,0,0,0.08);
+        }
+        body.light-mode .aqi-label {
+            color: #6b7280;
+        }
+        body.light-mode .aqi-desc {
+            color: #374151;
+        }
+
+        /* Health advice box */
+        body.light-mode .health-advice-box {
+            background: linear-gradient(135deg, rgba(0,168,120,0.08), rgba(2,132,199,0.08));
+            border-color: rgba(0, 168, 120, 0.2);
+        }
+        body.light-mode .health-advice-text h4 {
+            color: #0f172a;
+        }
+        body.light-mode .health-advice-text p {
+            color: #374151;
+        }
+        body.light-mode .health-advice-icon {
+            color: #00a878;
+            background: rgba(0,168,120,0.12);
+        }
+
+        /* Info badges section */
+        body.light-mode .info-badges {
+            gap: 10px;
+        }
+
+        /* Chart containers */
+        body.light-mode .chart-container {
+            background: transparent;
+        }
+
+        /* Placeholder state */
+        body.light-mode .placeholder-state h3 {
+            color: #1e293b;
+        }
+        body.light-mode .placeholder-state p {
+            color: #6b7280;
+        }
+
+        /* Section headers / stat cards */
+        body.light-mode .stat-card {
+            background: #f1f5f9;
+            border: 1px solid rgba(0,0,0,0.07);
+        }
+        body.light-mode .stat-label {
+            color: #6b7280;
+        }
+        body.light-mode .stat-value {
+            color: #0f172a;
+        }
+
+        /* Sliders (simulator) */
+        body.light-mode input[type="range"] {
+            accent-color: #00a878;
+        }
+        body.light-mode .slider-value {
+            background: rgba(0, 168, 120, 0.12);
+            color: #00a878;
+            border-color: rgba(0, 168, 120, 0.25);
+        }
+
+        /* Health profile options */
+        body.light-mode .health-opt {
+            background: #f8fafc;
+            border-color: rgba(0, 0, 0, 0.09);
+            color: #374151;
+        }
+        body.light-mode .health-opt:hover,
+        body.light-mode .health-opt:has(input:checked) {
+            background: rgba(0, 168, 120, 0.08);
+            border-color: #00a878;
+            color: #00a878;
+        }
+
+        /* Tooltip */
+        body.light-mode .pollutant-label .tip {
+            background: #ffffff;
+            border-color: rgba(0,0,0,0.1);
+            color: #0f172a;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        /* City dropdown */
+        body.light-mode .city-item {
+            color: #1e293b;
+            border-bottom-color: rgba(0,0,0,0.05);
+        }
+        body.light-mode #citySearchDropdown,
+        body.light-mode #histCityDropdown,
+        body.light-mode #cmp1Dropdown,
+        body.light-mode #cmp2Dropdown {
+            background: #ffffff;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        body.light-mode .city-item:hover {
+            background: rgba(0, 168, 120, 0.07);
+            color: #00a878;
+        }
+
+        /* Action buttons */
+        body.light-mode .action-btns button {
+            background: #f1f5f9;
+            border-color: rgba(0,0,0,0.1);
+            color: #374151;
+        }
+        body.light-mode .action-btns button:hover {
+            background: rgba(0, 168, 120, 0.08);
+            border-color: #00a878;
+            color: #00a878;
+        }
+
+        /* Theme toggle button */
+        body.light-mode #themeToggle {
+            background: rgba(0, 168, 120, 0.1);
+            border-color: rgba(0, 168, 120, 0.25);
+            color: #00a878;
+        }
+
+        /* Footer */
+        body.light-mode footer {
+            background: rgba(255,255,255,0.9);
+            border-top: 1px solid rgba(0,0,0,0.08);
+        }
+        body.light-mode footer h4,
+        body.light-mode .footer-col p,
+        body.light-mode .footer-col a,
+        body.light-mode .footer-col li {
+            color: #374151 !important;
+        }
+        body.light-mode .copyright-section {
+            border-top-color: rgba(0,0,0,0.07);
+            color: #6b7280;
+        }
+        body.light-mode .copyright-section a {
+            color: #6b7280;
+        }
+
+        /* Map info cards */
+        body.light-mode #mapInfoCard {
+            background: #ffffff;
+        }
+
+        /* Compare & history grids */
+        body.light-mode #cmpCard1,
+        body.light-mode #cmpCard2 {
+            background: #ffffff;
+        }
+
+        /* Responsive grids */
+        @media (max-width: 768px) {
+            .history-grid, .compare-inputs { grid-template-columns: 1fr !important; }
+        }
+
+        /* Share / PDF buttons */
+        .action-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+        .action-btns button {
+            flex: 1;
+            min-width: 140px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-glass);
+            background: rgba(255,255,255,0.05);
+            color: var(--text-main);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+        }
+        .action-btns button:hover { background: rgba(0,255,183,0.1); border-color: var(--primary); color: var(--primary); }
+
+        /* City search dropdown items */
+        .city-item {
+            padding: 11px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            transition: background 0.15s;
+        }
+        .city-item:hover { background: rgba(0,255,183,0.1); color: var(--primary); }
+        .city-item .city-country { font-size: 11px; color: var(--text-muted); }
     </style>
+
 </head>
 
 <body>
@@ -831,21 +1164,38 @@
         <div class="logo">
             <i class="fa-solid fa-wind"></i> AQI <span>Predictor & Simulator</span>
         </div>
-        <div class="developer-badge">
-            <i class="fa-solid fa-code"></i> Developed by Zille Kibriya
+        <div style="display:flex;align-items:center;gap:12px;">
+            <button id="themeToggle" onclick="toggleTheme()" title="Toggle Light/Dark Mode" style="background:rgba(255,255,255,0.07);border:1px solid var(--border-glass);border-radius:50%;width:38px;height:38px;cursor:pointer;color:var(--primary);font-size:15px;display:flex;align-items:center;justify-content:center;transition:all 0.3s;">
+                <i class="fa-solid fa-moon" id="themeIcon"></i>
+            </button>
+            <div class="developer-badge">
+                <i class="fa-solid fa-code"></i> Developed by Zille Kibriya
+            </div>
         </div>
     </header>
 
     <!-- Navigation Tabs -->
-    <div class="tabs-container">
+    <div class="tabs-container" style="flex-wrap:wrap;">
         <button class="tab-btn active" onclick="switchTab('predictor')">
             <i class="fa-solid fa-brain"></i> Smart Predictor
         </button>
         <button class="tab-btn" onclick="switchTab('simulator')">
-            <i class="fa-solid fa-sliders"></i> Simulator Playground
+            <i class="fa-solid fa-sliders"></i> Simulator
+        </button>
+        <button class="tab-btn" onclick="switchTab('map')">
+            <i class="fa-solid fa-map-location-dot"></i> Live Map
+        </button>
+        <button class="tab-btn" onclick="switchTab('history')">
+            <i class="fa-solid fa-clock-rotate-left"></i> History & Forecast
+        </button>
+        <button class="tab-btn" onclick="switchTab('compare')">
+            <i class="fa-solid fa-code-compare"></i> Compare Cities
+        </button>
+        <button class="tab-btn" onclick="switchTab('health')">
+            <i class="fa-solid fa-heart-pulse"></i> Health Profile
         </button>
         <button class="tab-btn" onclick="switchTab('insights')">
-            <i class="fa-solid fa-chart-line"></i> Model Performance & Stats
+            <i class="fa-solid fa-chart-line"></i> ML Stats
         </button>
     </div>
 
@@ -979,8 +1329,15 @@
                         </div>
                     </div>
 
+                    <div class="action-btns">
+                        <button onclick="downloadPDF()"><i class="fa-solid fa-file-pdf"></i> Download PDF Report</button>
+                        <button onclick="shareResult()"><i class="fa-solid fa-share-nodes"></i> Share Result</button>
+                    </div>
+
                     <h3 style="margin-top: 30px; font-size: 16px; font-weight: 700; color: var(--text-main);"><i
-                            class="fa-solid fa-chart-simple"></i> Pollutant Index Breakdown</h3>
+                            class="fa-solid fa-chart-simple"></i> Pollutant Index Breakdown
+                        <span style="font-size:12px;font-weight:400;color:var(--text-muted);margin-left:8px;">(hover pollutant names for info)</span>
+                    </h3>
                     <div class="chart-container">
                         <canvas id="predictorPollutantChart"></canvas>
                     </div>
@@ -1367,6 +1724,115 @@
             </div>
         </section>
 
+        <!-- ========== TAB: LIVE MAP ========== -->
+        <section id="map-tab" class="tab-content">
+            <div class="card" style="margin-bottom:20px;">
+                <h2 class="card-title"><i class="fa-solid fa-magnifying-glass-location"></i> Search City</h2>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <div style="position:relative;flex:1;min-width:200px;">
+                        <input id="citySearchInput" type="text" placeholder="Type a city name e.g. Delhi, Tokyo, London..." oninput="debouncedCitySearch()" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border-glass);border-radius:12px;padding:12px 16px;color:var(--text-main);font-size:14px;outline:none;">
+                        <div id="citySearchDropdown" style="display:none;position:absolute;top:110%;left:0;right:0;background:#111827;border:1px solid var(--border-glass);border-radius:12px;z-index:200;overflow:hidden;"></div>
+                    </div>
+                    <button onclick="loadMapCurrentLocation()" style="background:linear-gradient(135deg,var(--primary),var(--secondary));border:none;border-radius:12px;padding:12px 20px;color:#030712;font-weight:700;cursor:pointer;white-space:nowrap;"><i class="fa-solid fa-location-crosshairs"></i> My Location</button>
+                </div>
+            </div>
+            <div class="card" style="padding:0;overflow:hidden;">
+                <div id="liveMap" style="height:520px;width:100%;border-radius:16px;"></div>
+            </div>
+            <div id="mapInfoCard" class="card" style="display:none;margin-top:16px;">
+                <h2 class="card-title" id="mapInfoCity"><i class="fa-solid fa-circle-info"></i> Location AQI</h2>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-top:14px;" id="mapInfoGrid"></div>
+            </div>
+        </section>
+
+        <!-- ========== TAB: HISTORY & FORECAST ========== -->
+        <section id="history-tab" class="tab-content">
+            <div class="card" style="margin-bottom:20px;">
+                <h2 class="card-title"><i class="fa-solid fa-location-dot"></i> Select Location for Trend Analysis</h2>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <div style="position:relative;flex:1;min-width:200px;">
+                        <input id="histCityInput" type="text" placeholder="Type a city..." oninput="debouncedHistSearch()" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border-glass);border-radius:12px;padding:12px 16px;color:var(--text-main);font-size:14px;outline:none;">
+                        <div id="histCityDropdown" style="display:none;position:absolute;top:110%;left:0;right:0;background:#111827;border:1px solid var(--border-glass);border-radius:12px;z-index:200;overflow:hidden;"></div>
+                    </div>
+                    <button onclick="loadHistoryCurrentLocation()" style="background:linear-gradient(135deg,var(--primary),var(--secondary));border:none;border-radius:12px;padding:12px 20px;color:#030712;font-weight:700;cursor:pointer;white-space:nowrap;"><i class="fa-solid fa-location-crosshairs"></i> My Location</button>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" class="history-grid">
+                <div class="card">
+                    <h2 class="card-title"><i class="fa-solid fa-clock-rotate-left"></i> 7-Day AQI History</h2>
+                    <div class="chart-container" style="height:260px;"><canvas id="historyChart"></canvas></div>
+                    <p id="historyStatus" style="text-align:center;color:var(--text-muted);font-size:13px;margin-top:10px;">Select a city to load history.</p>
+                </div>
+                <div class="card">
+                    <h2 class="card-title"><i class="fa-solid fa-forward"></i> 3-Day AQI Forecast</h2>
+                    <div id="forecastCards" style="display:flex;flex-direction:column;gap:12px;margin-top:10px;">
+                        <p style="color:var(--text-muted);font-size:13px;text-align:center;">Select a city to load forecast.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== TAB: COMPARE CITIES ========== -->
+        <section id="compare-tab" class="tab-content">
+            <div class="card" style="margin-bottom:20px;">
+                <h2 class="card-title"><i class="fa-solid fa-code-compare"></i> Compare Two Locations</h2>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="compare-inputs">
+                    <div>
+                        <label style="font-size:12px;color:var(--text-muted);margin-bottom:6px;display:block;">CITY A</label>
+                        <div style="position:relative;">
+                            <input id="cmp1Input" type="text" placeholder="e.g. Mumbai" oninput="debouncedCmpSearch(1)" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border-glass);border-radius:12px;padding:12px 16px;color:var(--text-main);font-size:14px;outline:none;">
+                            <div id="cmp1Dropdown" style="display:none;position:absolute;top:110%;left:0;right:0;background:#111827;border:1px solid var(--border-glass);border-radius:12px;z-index:200;overflow:hidden;"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size:12px;color:var(--text-muted);margin-bottom:6px;display:block;">CITY B</label>
+                        <div style="position:relative;">
+                            <input id="cmp2Input" type="text" placeholder="e.g. London" oninput="debouncedCmpSearch(2)" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border-glass);border-radius:12px;padding:12px 16px;color:var(--text-main);font-size:14px;outline:none;">
+                            <div id="cmp2Dropdown" style="display:none;position:absolute;top:110%;left:0;right:0;background:#111827;border:1px solid var(--border-glass);border-radius:12px;z-index:200;overflow:hidden;"></div>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="runCompare()" id="compareBtn" style="margin-top:16px;background:linear-gradient(135deg,var(--primary),var(--secondary));border:none;border-radius:12px;padding:12px 28px;color:#030712;font-weight:700;cursor:pointer;font-size:14px;"><i class="fa-solid fa-right-left"></i> Compare Now</button>
+            </div>
+            <div id="compareResults" style="display:none;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" class="compare-inputs">
+                    <div class="card" id="cmpCard1"></div>
+                    <div class="card" id="cmpCard2"></div>
+                </div>
+                <div class="card" style="margin-top:20px;">
+                    <h2 class="card-title"><i class="fa-solid fa-chart-bar"></i> Side-by-Side Pollutant Comparison</h2>
+                    <div class="chart-container" style="height:280px;"><canvas id="compareChart"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== TAB: HEALTH PROFILE ========== -->
+        <section id="health-tab" class="tab-content">
+            <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;" class="compare-inputs">
+                <div class="card">
+                    <h2 class="card-title"><i class="fa-solid fa-user-doctor"></i> Your Health Profile</h2>
+                    <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Select your condition for personalised advice.</p>
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        <label class="health-opt" data-profile="healthy"><input type="radio" name="healthProfile" value="healthy" checked> <i class="fa-solid fa-person-running"></i> Healthy Adult</label>
+                        <label class="health-opt" data-profile="child"><input type="radio" name="healthProfile" value="child"> <i class="fa-solid fa-child"></i> Child (under 14)</label>
+                        <label class="health-opt" data-profile="elderly"><input type="radio" name="healthProfile" value="elderly"> <i class="fa-solid fa-person-cane"></i> Senior / Elderly</label>
+                        <label class="health-opt" data-profile="asthma"><input type="radio" name="healthProfile" value="asthma"> <i class="fa-solid fa-lungs"></i> Asthma / Respiratory</label>
+                        <label class="health-opt" data-profile="heart"><input type="radio" name="healthProfile" value="heart"> <i class="fa-solid fa-heart"></i> Heart Condition</label>
+                        <label class="health-opt" data-profile="pregnant"><input type="radio" name="healthProfile" value="pregnant"> <i class="fa-solid fa-baby"></i> Pregnant</label>
+                    </div>
+                    <div style="margin-top:20px;">
+                        <label style="font-size:12px;color:var(--text-muted);">ENTER AQI TO EVALUATE</label>
+                        <input type="number" id="healthAqiInput" placeholder="e.g. 120" min="0" max="500" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border-glass);border-radius:12px;padding:10px 14px;color:var(--text-main);font-size:14px;outline:none;margin-top:8px;">
+                        <button onclick="evaluateHealth()" style="margin-top:12px;width:100%;background:linear-gradient(135deg,var(--primary),var(--secondary));border:none;border-radius:12px;padding:11px;color:#030712;font-weight:700;cursor:pointer;"><i class="fa-solid fa-stethoscope"></i> Evaluate My Risk</button>
+                    </div>
+                </div>
+                <div class="card" id="healthResultPanel">
+                    <h2 class="card-title"><i class="fa-solid fa-shield-heart"></i> Personalised Health Advice</h2>
+                    <p style="color:var(--text-muted);font-size:13px;margin-top:10px;">Select your health profile and enter an AQI value, then click Evaluate.</p>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <!-- Footer -->
@@ -1702,6 +2168,293 @@
         document.getElementById('autoFetchSimulator').addEventListener('click', () => fetchGPSData('autoFetchSimulator', false));
         });
     </script>
+
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script>
+    // ===================== THEME TOGGLE =====================
+    function toggleTheme() {
+        document.body.classList.toggle('light-mode');
+        const icon = document.getElementById('themeIcon');
+        icon.className = document.body.classList.contains('light-mode') ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+    }
+    if (localStorage.getItem('theme') === 'light') toggleTheme();
+
+    // ===================== PDF DOWNLOAD =====================
+    function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const aqi = document.querySelector('.aqi-value')?.textContent?.trim() || 'N/A';
+        const cat = document.querySelector('.aqi-status-text')?.textContent?.trim() || 'N/A';
+        const desc = document.querySelector('.aqi-desc')?.textContent?.trim() || '';
+        const advice = document.querySelector('.health-advice-text p')?.textContent?.trim() || '';
+        const pm25 = document.querySelector('.badge-value')?.textContent?.trim() || '';
+        doc.setFillColor(3, 7, 18); doc.rect(0, 0, 210, 297, 'F');
+        doc.setTextColor(0, 255, 183); doc.setFontSize(22); doc.setFont('helvetica','bold');
+        doc.text('AQI Prediction Report', 105, 25, {align:'center'});
+        doc.setFontSize(10); doc.setTextColor(156,163,175);
+        doc.text(`Generated: ${new Date().toLocaleString()} | By Zille Kibriya`, 105, 33, {align:'center'});
+        doc.setDrawColor(0,255,183); doc.line(20, 38, 190, 38);
+        doc.setFontSize(14); doc.setTextColor(243,244,246); doc.setFont('helvetica','bold');
+        doc.text('Overall AQI', 20, 52); doc.setFontSize(40); doc.setTextColor(0,255,183);
+        doc.text(aqi, 20, 72);
+        doc.setFontSize(16); doc.setTextColor(255,255,255); doc.text(`Category: ${cat}`, 20, 86);
+        doc.setFontSize(11); doc.setTextColor(209,213,219); doc.setFont('helvetica','normal');
+        const descLines = doc.splitTextToSize(desc, 170);
+        doc.text(descLines, 20, 100);
+        doc.setFont('helvetica','bold'); doc.setTextColor(0,255,183); doc.text('Health Advice:', 20, 120);
+        doc.setFont('helvetica','normal'); doc.setTextColor(209,213,219);
+        const advLines = doc.splitTextToSize(advice, 170);
+        doc.text(advLines, 20, 130);
+        doc.setTextColor(0,191,255); doc.setFont('helvetica','bold'); doc.text(`Predicted PM2.5: ${pm25}`, 20, 170);
+        doc.setFontSize(9); doc.setTextColor(100,116,139);
+        doc.text('AI Air Quality Prediction Model | zillekibriya44456 | Computer Science & Engineering', 105, 285, {align:'center'});
+        doc.save(`AQI_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+    }
+
+    // ===================== SHARE RESULT =====================
+    function shareResult() {
+        const aqi = document.querySelector('.aqi-value')?.textContent?.trim() || '';
+        const cat = document.querySelector('.aqi-status-text')?.textContent?.trim() || '';
+        const text = `🌍 AQI Prediction Result\nAQI: ${aqi} — ${cat}\nPowered by AI AQI Predictor by Zille Kibriya`;
+        if (navigator.share) {
+            navigator.share({ title: 'AQI Prediction Result', text, url: window.location.href });
+        } else {
+            navigator.clipboard.writeText(text).then(() => alert('Result copied to clipboard! Paste anywhere to share.'));
+        }
+    }
+
+    // ===================== CITY SEARCH HELPER =====================
+    let _csTimers = {};
+    function makeCitySearch(inputId, dropdownId, onSelect) {
+        clearTimeout(_csTimers[inputId]);
+        _csTimers[inputId] = setTimeout(async () => {
+            const q = document.getElementById(inputId).value.trim();
+            const dd = document.getElementById(dropdownId);
+            if (q.length < 2) { dd.style.display='none'; return; }
+            try {
+                const res = await fetch(`/api/city-search?q=${encodeURIComponent(q)}`);
+                const data = await res.json();
+                if (!data.success || !data.results.length) { dd.style.display='none'; return; }
+                dd.innerHTML = data.results.map(r =>
+                    `<div class="city-item" onclick="selectCity('${inputId}','${dropdownId}',${r.latitude},${r.longitude},'${(r.name+', '+(r.admin1||r.country)).replace(/'/g,"\\'")}')">
+                        <div>${r.name}${r.admin1 ? ', '+r.admin1 : ''}</div>
+                        <div class="city-country">${r.country}</div>
+                    </div>`
+                ).join('');
+                dd.style.display='block';
+                dd._onSelect = onSelect;
+            } catch(e) { dd.style.display='none'; }
+        }, 350);
+    }
+    function selectCity(inputId, dropdownId, lat, lon, label) {
+        document.getElementById(inputId).value = label;
+        document.getElementById(dropdownId).style.display='none';
+        const dd = document.getElementById(dropdownId);
+        if (dd._onSelect) dd._onSelect(lat, lon, label);
+    }
+    document.addEventListener('click', e => {
+        ['citySearchDropdown','histCityDropdown','cmp1Dropdown','cmp2Dropdown'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && !el.parentElement.contains(e.target)) el.style.display='none';
+        });
+    });
+
+    // ===================== LIVE MAP =====================
+    let _map = null, _mapMarkers = [], _mapInitialized = false;
+    function initMap() {
+        if (_mapInitialized) return;
+        _mapInitialized = true;
+        _map = L.map('liveMap').setView([20, 0], 2);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 18
+        }).addTo(_map);
+        _map.on('click', e => fetchMapAQI(e.latlng.lat, e.latlng.lng, 'Clicked Location'));
+    }
+    async function fetchMapAQI(lat, lon, label) {
+        try {
+            const res = await fetch(`/api/aqi-by-coords?lat=${lat}&lon=${lon}`);
+            const d = await res.json();
+            if (!d.success) return;
+            const r = d.data;
+            const icon = L.divIcon({
+                className:'',
+                html:`<div style="background:${r.color};color:#030712;font-weight:800;font-size:13px;padding:5px 9px;border-radius:8px;white-space:nowrap;box-shadow:0 2px 12px rgba(0,0,0,0.5);">${r.overall_aqi}</div>`,
+                iconAnchor:[20,0]
+            });
+            _mapMarkers.forEach(m => m.remove());
+            _mapMarkers = [];
+            const marker = L.marker([lat,lon],{icon}).addTo(_map);
+            marker.bindPopup(`<b>${label}</b><br>AQI: <b>${r.overall_aqi}</b> — ${r.category}<br>PM2.5: ${r.api_pm25} µg/m³`).openPopup();
+            _mapMarkers.push(marker);
+            _map.setView([lat,lon], 8);
+            // Info card
+            document.getElementById('mapInfoCity').innerHTML = `<i class="fa-solid fa-circle-info"></i> ${label} — AQI ${r.overall_aqi}`;
+            document.getElementById('mapInfoGrid').innerHTML = [
+                ['AQI',r.overall_aqi,r.color],['Category',r.category,r.color],
+                ['PM2.5',r.api_pm25+' µg/m³','#00bfff'],['Temp',r.weather.temperature+'°C','#ff7e00'],
+                ['Humidity',r.weather.humidity+'%','#8f3f97'],['Wind',r.weather.wind_speed+' km/h','#00e400']
+            ].map(([l,v,c])=>`<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;text-align:center;">
+                <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">${l}</div>
+                <div style="font-size:20px;font-weight:800;color:${c};margin-top:4px;">${v}</div>
+            </div>`).join('');
+            document.getElementById('mapInfoCard').style.display='block';
+        } catch(e) { console.error(e); }
+    }
+    function loadMapCurrentLocation() {
+        if (!navigator.geolocation) return alert('Geolocation not supported');
+        navigator.geolocation.getCurrentPosition(p => fetchMapAQI(p.coords.latitude, p.coords.longitude, 'Your Location'));
+    }
+    function debouncedCitySearch() {
+        makeCitySearch('citySearchInput','citySearchDropdown',(lat,lon,label)=>{
+            if(!_mapInitialized) initMap();
+            fetchMapAQI(lat,lon,label);
+        });
+    }
+
+    // ===================== HISTORY & FORECAST =====================
+    let _histChart = null;
+    let _histLat = null, _histLon = null;
+    async function loadHistoryForecast(lat, lon) {
+        _histLat = lat; _histLon = lon;
+        document.getElementById('historyStatus').textContent = 'Loading...';
+        try {
+            const [hRes, fRes] = await Promise.all([
+                fetch(`/api/aqi-history?lat=${lat}&lon=${lon}`),
+                fetch(`/api/aqi-forecast?lat=${lat}&lon=${lon}`)
+            ]);
+            const h = await hRes.json();
+            const f = await fRes.json();
+            if (h.success) renderHistoryChart(h);
+            if (f.success) renderForecastCards(f);
+        } catch(e) { document.getElementById('historyStatus').textContent = 'Failed to load data.'; }
+    }
+    function renderHistoryChart(d) {
+        document.getElementById('historyStatus').textContent = '';
+        const ctx = document.getElementById('historyChart').getContext('2d');
+        if (_histChart) _histChart.destroy();
+        const colors = d.aqi_values.map(v => v<=50?'#00e400':v<=100?'#ffff00':v<=150?'#ff7e00':v<=200?'#ff0000':v<=300?'#8f3f97':'#7e0023');
+        _histChart = new Chart(ctx, {
+            type:'line', data:{
+                labels: d.dates.map(dt => new Date(dt).toLocaleDateString('en',{weekday:'short',month:'short',day:'numeric'})),
+                datasets:[{label:'AQI',data:d.aqi_values,borderColor:'#00ffb7',backgroundColor:'rgba(0,255,183,0.08)',pointBackgroundColor:colors,pointRadius:7,pointHoverRadius:10,tension:0.4,fill:true}]
+            },
+            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>{const v=c.parsed.y;const cat=v<=50?'Good':v<=100?'Moderate':v<=150?'USG':v<=200?'Unhealthy':v<=300?'Very Unhealthy':'Hazardous';return `AQI: ${v} (${cat})`;}}}},scales:{x:{ticks:{color:'#9ca3af',font:{size:11}}},y:{min:0,ticks:{color:'#9ca3af'},grid:{color:'rgba(255,255,255,0.04)'}}}}
+        });
+    }
+    function renderForecastCards(d) {
+        document.getElementById('forecastCards').innerHTML = d.dates.map((dt,i)=>{
+            const date = new Date(dt).toLocaleDateString('en',{weekday:'long',month:'short',day:'numeric'});
+            return `<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px 20px;">
+                <div>
+                    <div style="font-size:13px;color:var(--text-muted);">${date}</div>
+                    <div style="font-size:22px;font-weight:800;color:${d.colors[i]};margin-top:4px;">${d.aqi_values[i]}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="background:${d.colors[i]};color:#030712;padding:5px 14px;border-radius:20px;font-weight:700;font-size:13px;">${d.categories[i]}</div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+    function loadHistoryCurrentLocation() {
+        if (!navigator.geolocation) return alert('Geolocation not supported');
+        navigator.geolocation.getCurrentPosition(p => loadHistoryForecast(p.coords.latitude, p.coords.longitude));
+    }
+    function debouncedHistSearch() {
+        makeCitySearch('histCityInput','histCityDropdown',(lat,lon)=>loadHistoryForecast(lat,lon));
+    }
+
+    // ===================== COMPARE CITIES =====================
+    let _cmp = {1:{lat:null,lon:null,name:null}, 2:{lat:null,lon:null,name:null}};
+    let _cmpChart = null;
+    function debouncedCmpSearch(n) {
+        makeCitySearch(`cmp${n}Input`,`cmp${n}Dropdown`,(lat,lon,label)=>{_cmp[n]={lat,lon,name:label};});
+    }
+    async function runCompare() {
+        const a=_cmp[1], b=_cmp[2];
+        if (!a.lat || !b.lat) return alert('Please select both cities from the dropdown.');
+        document.getElementById('compareBtn').textContent = 'Loading...';
+        try {
+            const res = await fetch(`/api/compare?lat1=${a.lat}&lon1=${a.lon}&lat2=${b.lat}&lon2=${b.lon}&name1=${encodeURIComponent(a.name)}&name2=${encodeURIComponent(b.name)}`);
+            const d = await res.json();
+            if (!d.success) throw new Error(d.error);
+            renderCompareCards(d);
+            renderCompareChart(d);
+            document.getElementById('compareResults').style.display='block';
+        } catch(e) { alert('Compare failed: '+e.message); }
+        document.getElementById('compareBtn').innerHTML = '<i class="fa-solid fa-right-left"></i> Compare Now';
+    }
+    function renderCompareCards(d) {
+        [['cmpCard1',d.location1],['cmpCard2',d.location2]].forEach(([id,loc])=>{
+            document.getElementById(id).innerHTML = `
+                <h2 class="card-title" style="color:${loc.color};">${loc.name}</h2>
+                <div style="font-size:48px;font-weight:800;color:${loc.color};margin:10px 0;">${loc.overall_aqi}</div>
+                <div style="background:${loc.color};color:#030712;display:inline-block;padding:5px 16px;border-radius:20px;font-weight:700;font-size:13px;margin-bottom:14px;">${loc.category}</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    ${Object.entries(loc.sub_indices).map(([k,v])=>`<div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;text-align:center;"><div style="font-size:10px;color:var(--text-muted);">${k}</div><div style="font-weight:700;color:var(--primary);">${v}</div></div>`).join('')}
+                </div>`;
+        });
+    }
+    function renderCompareChart(d) {
+        const ctx = document.getElementById('compareChart').getContext('2d');
+        if (_cmpChart) _cmpChart.destroy();
+        const labels = Object.keys(d.location1.sub_indices);
+        _cmpChart = new Chart(ctx,{
+            type:'bar',
+            data:{labels,datasets:[
+                {label:d.location1.name,data:Object.values(d.location1.sub_indices),backgroundColor:'rgba(0,255,183,0.7)',borderRadius:6},
+                {label:d.location2.name,data:Object.values(d.location2.sub_indices),backgroundColor:'rgba(0,191,255,0.7)',borderRadius:6}
+            ]},
+            options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#f3f4f6'}}},scales:{x:{ticks:{color:'#9ca3af'}},y:{min:0,ticks:{color:'#9ca3af'},grid:{color:'rgba(255,255,255,0.04)'}}}}
+        });
+    }
+
+    // ===================== HEALTH PROFILE =====================
+    const HEALTH_PROFILES = {
+        healthy:  {label:'Healthy Adult', icon:'fa-person-running', thresholds:[{max:100,risk:'Low',color:'#00e400',tips:['Enjoy all outdoor activities freely.','No special precautions needed.']},{max:150,risk:'Moderate',color:'#ffff00',tips:['Consider reducing prolonged outdoor exertion.','Sensitive individuals may experience minor symptoms.']},{max:200,risk:'High',color:'#ff7e00',tips:['Avoid heavy outdoor activity.','Wear a mask if outdoors for long.']},{max:500,risk:'Very High',color:'#ff0000',tips:['Stay indoors as much as possible.','Keep windows closed.']}]},
+        child:    {label:'Child (under 14)', icon:'fa-child', thresholds:[{max:50,risk:'Low',color:'#00e400',tips:['Safe for all outdoor play.']},{max:100,risk:'Moderate',color:'#ffff00',tips:['Limit prolonged outdoor play.','Keep inhaler handy if asthmatic.']},{max:150,risk:'High',color:'#ff7e00',tips:['Cancel outdoor sports/activities.','Keep kids indoors during peak hours.']},{max:500,risk:'Very High',color:'#ff0000',tips:['No outdoor activity.','Use air purifier indoors.']}]},
+        elderly:  {label:'Senior / Elderly', icon:'fa-person-cane', thresholds:[{max:50,risk:'Low',color:'#00e400',tips:['Safe for gentle walks.']},{max:100,risk:'Moderate',color:'#ffff00',tips:['Keep outdoor time short.','Stay hydrated.']},{max:150,risk:'High',color:'#ff7e00',tips:['Stay indoors.','Check with doctor if breathing feels tight.']},{max:500,risk:'Very High',color:'#ff0000',tips:['Do not go outside.','Use N95 mask if essential to travel.']}]},
+        asthma:   {label:'Asthma / Respiratory', icon:'fa-lungs', thresholds:[{max:50,risk:'Low',color:'#00e400',tips:['Safe day. Carry rescue inhaler as always.']},{max:100,risk:'Moderate',color:'#ffff00',tips:['Pre-medicate before outdoor activity.','Avoid smoky areas.']},{max:150,risk:'High',color:'#ff7e00',tips:['Avoid all outdoor activity.','Keep reliever inhaler accessible.']},{max:500,risk:'Very High',color:'#ff0000',tips:['Emergency risk. Stay indoors.','Contact doctor if symptoms appear.']}]},
+        heart:    {label:'Heart Condition', icon:'fa-heart', thresholds:[{max:50,risk:'Low',color:'#00e400',tips:['Normal activity is safe.']},{max:100,risk:'Moderate',color:'#ffff00',tips:['Reduce strenuous physical activity.','Monitor blood pressure.']},{max:150,risk:'High',color:'#ff7e00',tips:['Stay indoors. Avoid exertion.','Keep prescribed medications nearby.']},{max:500,risk:'Very High',color:'#ff0000',tips:['Do not go outside.','Seek medical advice immediately if symptoms occur.']}]},
+        pregnant: {label:'Pregnant', icon:'fa-baby', thresholds:[{max:50,risk:'Low',color:'#00e400',tips:['Safe for light outdoor walks.']},{max:100,risk:'Moderate',color:'#ffff00',tips:['Keep outdoor exposure brief.','Stay hydrated.']},{max:150,risk:'High',color:'#ff7e00',tips:['Avoid outdoor activity.','Wear N95 mask if travel is unavoidable.']},{max:500,risk:'Very High',color:'#ff0000',tips:['Stay indoors.','Consult OB-GYN if exposure occurred.']}]}
+    };
+    function evaluateHealth() {
+        const aqi = parseInt(document.getElementById('healthAqiInput').value);
+        if (isNaN(aqi)||aqi<0||aqi>500) return alert('Please enter a valid AQI (0–500).');
+        const profileKey = document.querySelector('input[name="healthProfile"]:checked').value;
+        const profile = HEALTH_PROFILES[profileKey];
+        const tier = profile.thresholds.find(t=>aqi<=t.max) || profile.thresholds.at(-1);
+        const aqiCat = aqi<=50?'Good':aqi<=100?'Moderate':aqi<=150?'USG':aqi<=200?'Unhealthy':aqi<=300?'Very Unhealthy':'Hazardous';
+        document.getElementById('healthResultPanel').innerHTML = `
+            <h2 class="card-title"><i class="fa-solid fa-shield-heart"></i> Personalised Health Advice</h2>
+            <div style="margin-top:16px;background:rgba(255,255,255,0.04);border-radius:16px;padding:20px;border-left:4px solid ${tier.color};">
+                <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+                    <div style="width:64px;height:64px;border-radius:50%;background:${tier.color}22;display:flex;align-items:center;justify-content:center;font-size:28px;color:${tier.color};"><i class="fa-solid ${profile.icon}"></i></div>
+                    <div>
+                        <div style="font-size:13px;color:var(--text-muted);">${profile.label}</div>
+                        <div style="font-size:32px;font-weight:800;color:${tier.color};">${aqi}</div>
+                        <div style="font-size:12px;color:var(--text-muted);">${aqiCat}</div>
+                    </div>
+                    <div style="margin-left:auto;background:${tier.color};color:#030712;padding:8px 18px;border-radius:20px;font-weight:800;font-size:15px;">${tier.risk} Risk</div>
+                </div>
+                <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;">
+                    ${tier.tips.map(t=>`<li style="display:flex;align-items:flex-start;gap:10px;"><i class="fa-solid fa-circle-check" style="color:${tier.color};margin-top:2px;"></i><span style="font-size:14px;">${t}</span></li>`).join('')}
+                </ul>
+            </div>
+            <p style="font-size:11px;color:var(--text-muted);margin-top:14px;">⚠️ This tool provides general guidance only. Always consult a medical professional for health decisions.</p>
+        `;
+    }
+
+    // ===================== INIT MAP ON TAB SWITCH =====================
+    const _origSwitch = switchTab;
+    window.switchTab = function(id) {
+        _origSwitch(id);
+        if (id==='map') { setTimeout(()=>{ initMap(); if(_map) _map.invalidateSize(); }, 100); }
+    };
+    </script>
 </body>
+
 
 </html>

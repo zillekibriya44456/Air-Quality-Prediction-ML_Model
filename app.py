@@ -351,4 +351,120 @@ def aqi_by_coords():
         return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    port = int(os.environ.get("PORT", 5001))
+    app.run(debug=False, host="0.0.0.0", port=port)
+
+@app.route('/api/city-search', methods=['GET'])
+def city_search():
+    try:
+        q = request.args.get('q', '').strip()
+        if not q:
+            return jsonify({"success": False, "error": "Query required"}), 400
+        url = f"https://geocoding-api.open-meteo.com/v1/search?name={urllib.request.quote(q)}&count=6&language=en&format=json"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode())
+        results = []
+        for r in (data.get('results') or []):
+            results.append({"name": r.get('name',''), "country": r.get('country',''), "admin1": r.get('admin1',''), "latitude": r.get('latitude'), "longitude": r.get('longitude')})
+        return jsonify({"success": True, "results": results})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/aqi-history', methods=['GET'])
+def aqi_history():
+    try:
+        lat = request.args.get('lat')
+        lon = request.args.get('lon')
+        if not lat or not lon:
+            return jsonify({"success": False, "error": "lat and lon required"}), 400
+        from datetime import datetime, timedelta
+        end = datetime.utcnow().strftime('%Y-%m-%d')
+        start = (datetime.utcnow() - timedelta(days=6)).strftime('%Y-%m-%d')
+        url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&hourly=pm2_5&start_date={start}&end_date={end}&timezone=auto"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            raw = json.loads(resp.read().decode())
+        times = raw.get('hourly', {}).get('time', [])
+        pm25s = raw.get('hourly', {}).get('pm2_5', [])
+        daily = {}
+        for t, v in zip(times, pm25s):
+            day = t[:10]
+            if v is not None:
+                daily.setdefault(day, []).append(v)
+        days, aqis = [], []
+        for day in sorted(daily.keys()):
+            avg_pm25 = sum(daily[day]) / len(daily[day])
+            aqi_val = calculate_aqi_subindex(avg_pm25, "PM2.5")
+            days.append(day)
+            aqis.append(aqi_val)
+        return jsonify({"success": True, "dates": days, "aqi_values": aqis})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/aqi-forecast', methods=['GET'])
+def aqi_forecast():
+    try:
+        lat = request.args.get('lat')
+        lon = request.args.get('lon')
+        if not lat or not lon:
+            return jsonify({"success": False, "error": "lat and lon required"}), 400
+        url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&hourly=pm2_5&forecast_days=4&timezone=auto"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            raw = json.loads(resp.read().decode())
+        times = raw.get('hourly', {}).get('time', [])
+        pm25s = raw.get('hourly', {}).get('pm2_5', [])
+        from datetime import datetime
+        today = datetime.utcnow().strftime('%Y-%m-%d')
+        daily = {}
+        for t, v in zip(times, pm25s):
+            day = t[:10]
+            if day > today and v is not None:
+                daily.setdefault(day, []).append(v)
+        days, aqis, cats, colors = [], [], [], []
+        for day in sorted(daily.keys())[:3]:
+            avg_pm25 = sum(daily[day]) / len(daily[day])
+            aqi_val = calculate_aqi_subindex(avg_pm25, "PM2.5")
+            cat, color, _, _ = get_aqi_category(aqi_val)
+            days.append(day)
+            aqis.append(aqi_val)
+            cats.append(cat)
+            colors.append(color)
+        return jsonify({"success": True, "dates": days, "aqi_values": aqis, "categories": cats, "colors": colors})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/compare', methods=['GET'])
+def compare():
+    try:
+        lat1 = request.args.get('lat1'); lon1 = request.args.get('lon1')
+        lat2 = request.args.get('lat2'); lon2 = request.args.get('lon2')
+        name1 = request.args.get('name1', 'Location A')
+        name2 = request.args.get('name2', 'Location B')
+        if not all([lat1, lon1, lat2, lon2]):
+            return jsonify({"success": False, "error": "lat1,lon1,lat2,lon2 required"}), 400
+        def fetch_loc(lat, lon, name):
+            aqi_url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone"
+            req2 = urllib.request.Request(aqi_url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req2, timeout=8) as r:
+                d = json.loads(r.read().decode())
+            cur = d.get('current', {})
+            pm25 = float(cur.get('pm2_5') or 15)
+            pm10 = float(cur.get('pm10') or 40)
+            no2 = float((cur.get('nitrogen_dioxide') or 25) * 0.53)
+            so2 = float((cur.get('sulphur_dioxide') or 5) * 0.38)
+            co = float((cur.get('carbon_monoxide') or 300) * 0.00087)
+            o3 = float((cur.get('ozone') or 50) * 0.51)
+            sub = {"PM2.5": calculate_aqi_subindex(pm25,"PM2.5"), "PM10": calculate_aqi_subindex(pm10,"PM10"), "NO2": calculate_aqi_subindex(no2,"NO2"), "SO2": calculate_aqi_subindex(so2,"SO2"), "CO": calculate_aqi_subindex(co,"CO"), "O3": calculate_aqi_subindex(o3,"O3")}
+            overall = max(sub.values())
+            cat, color, desc, advice = get_aqi_category(overall)
+            return {"name": name, "overall_aqi": overall, "category": cat, "color": color, "sub_indices": sub, "pm25": pm25}
+        loc1 = fetch_loc(lat1, lon1, name1)
+        loc2 = fetch_loc(lat2, lon2, name2)
+        return jsonify({"success": True, "location1": loc1, "location2": loc2})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
