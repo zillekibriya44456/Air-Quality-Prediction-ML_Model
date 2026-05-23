@@ -18,8 +18,10 @@
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Socket.IO Client -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
-    <style>
+
         :root {
             --bg-dark: #030712;
             --card-bg: rgba(17, 24, 39, 0.5);
@@ -1164,8 +1166,39 @@
         <div class="logo">
             <i class="fa-solid fa-wind"></i> AQI <span>Predictor & Simulator</span>
         </div>
-        <div style="display:flex;align-items:center;gap:12px;">
-            <button id="themeToggle" onclick="toggleTheme()" title="Toggle Light/Dark Mode" style="background:rgba(255,255,255,0.07);border:1px solid var(--border-glass);border-radius:50%;width:38px;height:38px;cursor:pointer;color:var(--primary);font-size:15px;display:flex;align-items:center;justify-content:center;transition:all 0.3s;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <!-- Language Selector -->
+            <select id="langSelect" onchange="setLanguage(this.value)" title="Select Language"
+                style="background:rgba(255,255,255,0.07);border:1px solid var(--border-glass);border-radius:10px;padding:7px 12px;color:var(--text-main);font-size:13px;cursor:pointer;outline:none;">
+                <option value="en">🇬🇧 English</option>
+                <option value="hi">🇮🇳 हिन्दी</option>
+                <option value="es">🇪🇸 Español</option>
+                <option value="fr">🇫🇷 Français</option>
+                <option value="ar">🇸🇦 العربية</option>
+                <option value="zh">🇨🇳 中文</option>
+            </select>
+            <!-- Notification Bell -->
+            <div style="position:relative;">
+                <button id="notifBell" onclick="toggleNotifPanel()" title="AQI Alerts"
+                    style="background:rgba(255,255,255,0.07);border:1px solid var(--border-glass);border-radius:50%;width:38px;height:38px;cursor:pointer;color:var(--primary);font-size:15px;display:flex;align-items:center;justify-content:center;transition:all 0.3s;position:relative;">
+                    <i class="fa-solid fa-bell" id="bellIcon"></i>
+                    <span id="notifDot" style="display:none;position:absolute;top:5px;right:5px;width:8px;height:8px;background:#ff4444;border-radius:50%;"></span>
+                </button>
+                <div id="notifPanel" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:#111827;border:1px solid var(--border-glass);border-radius:16px;padding:18px;width:280px;z-index:500;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+                    <div style="font-weight:700;margin-bottom:12px;"><i class="fa-solid fa-bell" style="color:var(--primary);"></i> AQI Alert Settings</div>
+                    <label style="font-size:12px;color:var(--text-muted);">Alert me when AQI exceeds:</label>
+                    <div style="display:flex;gap:8px;margin-top:6px;">
+                        <input type="number" id="notifThreshold" value="100" min="1" max="500"
+                            style="flex:1;background:rgba(255,255,255,0.05);border:1px solid var(--border-glass);border-radius:8px;padding:8px;color:var(--text-main);font-size:14px;outline:none;">
+                        <button onclick="enableNotifications()" style="background:linear-gradient(135deg,var(--primary),var(--secondary));border:none;border-radius:8px;padding:8px 14px;color:#030712;font-weight:700;cursor:pointer;font-size:12px;">Enable</button>
+                    </div>
+                    <div id="notifStatus" style="font-size:11px;color:var(--text-muted);margin-top:10px;">Click Enable to activate alerts.</div>
+                    <button onclick="testNotification()" style="margin-top:10px;width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border-glass);border-radius:8px;padding:7px;color:var(--text-main);cursor:pointer;font-size:12px;"><i class="fa-solid fa-vial"></i> Test Notification</button>
+                </div>
+            </div>
+            <!-- Theme Toggle -->
+            <button id="themeToggle" onclick="toggleTheme()" title="Toggle Light/Dark Mode"
+                style="background:rgba(255,255,255,0.07);border:1px solid var(--border-glass);border-radius:50%;width:38px;height:38px;cursor:pointer;color:var(--primary);font-size:15px;display:flex;align-items:center;justify-content:center;transition:all 0.3s;">
                 <i class="fa-solid fa-moon" id="themeIcon"></i>
             </button>
             <div class="developer-badge">
@@ -1176,7 +1209,7 @@
 
     <!-- Navigation Tabs -->
     <div class="tabs-container" style="flex-wrap:wrap;">
-        <button class="tab-btn active" onclick="switchTab('predictor')">
+        <button class="tab-btn active" id="tab-predictor" onclick="switchTab('predictor')" data-i18n="smartPredictor">
             <i class="fa-solid fa-brain"></i> Smart Predictor
         </button>
         <button class="tab-btn" onclick="switchTab('simulator')">
@@ -1196,6 +1229,9 @@
         </button>
         <button class="tab-btn" onclick="switchTab('insights')">
             <i class="fa-solid fa-chart-line"></i> ML Stats
+        </button>
+        <button class="tab-btn" onclick="switchTab('realtime')">
+            <i class="fa-solid fa-satellite-dish"></i> Live Dashboard
         </button>
     </div>
 
@@ -1833,6 +1869,72 @@
             </div>
         </section>
 
+        <!-- ========== TAB: REAL-TIME DASHBOARD ========== -->
+        <section id="realtime-tab" class="tab-content">
+            <!-- Location Selector -->
+            <div class="card" style="margin-bottom:20px;">
+                <h2 class="card-title"><i class="fa-solid fa-satellite-dish"></i> Live AQI Monitor</h2>
+                <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">Select a location and the dashboard will auto-refresh AQI data via WebSocket every 30 seconds.</p>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                    <div style="position:relative;flex:1;min-width:200px;">
+                        <input id="rtCityInput" type="text" placeholder="Search a city..." oninput="debouncedRtSearch()"
+                            style="width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border-glass);border-radius:12px;padding:12px 16px;color:var(--text-main);font-size:14px;outline:none;">
+                        <div id="rtCityDropdown" style="display:none;position:absolute;top:110%;left:0;right:0;background:#111827;border:1px solid var(--border-glass);border-radius:12px;z-index:200;overflow:hidden;"></div>
+                    </div>
+                    <button onclick="startRtMonitor()" id="rtStartBtn"
+                        style="background:linear-gradient(135deg,var(--primary),var(--secondary));border:none;border-radius:12px;padding:12px 20px;color:#030712;font-weight:700;cursor:pointer;white-space:nowrap;">
+                        <i class="fa-solid fa-play"></i> Start Monitor
+                    </button>
+                    <button onclick="useGpsRealtime()"
+                        style="background:rgba(255,255,255,0.07);border:1px solid var(--border-glass);border-radius:12px;padding:12px 18px;color:var(--primary);cursor:pointer;font-weight:600;white-space:nowrap;">
+                        <i class="fa-solid fa-location-crosshairs"></i> My Location
+                    </button>
+                    <button onclick="stopRtMonitor()" id="rtStopBtn" style="display:none;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.3);border-radius:12px;padding:12px 18px;color:#ff6b6b;cursor:pointer;font-weight:600;">
+                        <i class="fa-solid fa-stop"></i> Stop
+                    </button>
+                </div>
+                <!-- Status bar -->
+                <div id="rtStatusBar" style="margin-top:14px;display:flex;align-items:center;gap:10px;">
+                    <span id="rtDot" style="width:10px;height:10px;border-radius:50%;background:#6b7280;display:inline-block;"></span>
+                    <span id="rtStatus" style="font-size:13px;color:var(--text-muted);">Not connected. Select a city and click Start.</span>
+                    <span id="rtLastUpdate" style="font-size:11px;color:var(--text-muted);margin-left:auto;"></span>
+                </div>
+            </div>
+
+            <!-- Live Metric Cards -->
+            <div id="rtMetrics" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-bottom:20px;display:none;">
+                <div class="card" style="text-align:center;padding:20px;">
+                    <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">Overall AQI</div>
+                    <div id="rtAqiVal" style="font-size:48px;font-weight:800;color:var(--primary);">—</div>
+                    <div id="rtAqiCat" style="font-size:12px;color:var(--text-muted);margin-top:4px;">—</div>
+                </div>
+                <div class="card" style="text-align:center;padding:20px;">
+                    <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">PM2.5</div>
+                    <div id="rtPm25" style="font-size:32px;font-weight:800;color:#00bfff;">—</div>
+                    <div style="font-size:11px;color:var(--text-muted);">µg/m³</div>
+                </div>
+                <div class="card" style="text-align:center;padding:20px;">
+                    <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">PM2.5 AQI</div>
+                    <div id="rtPm25Aqi" style="font-size:32px;font-weight:800;color:#8b5cf6;">—</div>
+                </div>
+                <div class="card" style="text-align:center;padding:20px;">
+                    <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">NO₂ Index</div>
+                    <div id="rtNo2" style="font-size:32px;font-weight:800;color:#fb923c;">—</div>
+                </div>
+                <div class="card" style="text-align:center;padding:20px;">
+                    <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;">O₃ Index</div>
+                    <div id="rtO3" style="font-size:32px;font-weight:800;color:#34d399;">—</div>
+                </div>
+            </div>
+
+            <!-- Live Trend Chart -->
+            <div class="card" id="rtChartCard" style="display:none;">
+                <h2 class="card-title"><i class="fa-solid fa-wave-square"></i> Live AQI Trend <span id="rtLocation" style="color:var(--primary);font-size:14px;"></span></h2>
+                <div class="chart-container" style="height:260px;"><canvas id="rtChart"></canvas></div>
+                <p style="font-size:11px;color:var(--text-muted);margin-top:8px;text-align:right;">Auto-refreshes every 30 seconds via WebSocket</p>
+            </div>
+        </section>
+
     </main>
 
     <!-- Footer -->
@@ -2452,9 +2554,273 @@
     window.switchTab = function(id) {
         _origSwitch(id);
         if (id==='map') { setTimeout(()=>{ initMap(); if(_map) _map.invalidateSize(); }, 100); }
+        if (id==='realtime') { /* socket connects on demand */ }
     };
     </script>
+
+    <script>
+    // ===================== MULTI-LANGUAGE SUPPORT =====================
+    const TRANSLATIONS = {
+        en: { smartPredictor:'Smart Predictor', simulator:'Simulator', liveMap:'Live Map',
+              historyForecast:'History & Forecast', compareCities:'Compare Cities',
+              healthProfile:'Health Profile', mlStats:'ML Stats', liveDash:'Live Dashboard',
+              predict:'Predict AQI', reset:'Reset', searchCity:'Search a city...',
+              myLocation:'My Location', startMonitor:'Start Monitor', stop:'Stop',
+              downloadPDF:'Download PDF Report', shareResult:'Share Result',
+              evaluateRisk:'Evaluate My Risk', compareNow:'Compare Now' },
+        hi: { smartPredictor:'स्मार्ट प्रेडिक्टर', simulator:'सिमुलेटर', liveMap:'लाइव मैप',
+              historyForecast:'इतिहास और पूर्वानुमान', compareCities:'शहरों की तुलना',
+              healthProfile:'स्वास्थ्य प्रोफाइल', mlStats:'ML आँकड़े', liveDash:'लाइव डैशबोर्ड',
+              predict:'AQI अनुमान करें', reset:'रीसेट', searchCity:'शहर खोजें...',
+              myLocation:'मेरी लोकेशन', startMonitor:'मॉनीटर शुरू करें', stop:'रोकें',
+              downloadPDF:'PDF रिपोर्ट डाउनलोड', shareResult:'परिणाम साझा करें',
+              evaluateRisk:'जोखिम आकलन करें', compareNow:'अभी तुलना करें' },
+        es: { smartPredictor:'Predictor Inteligente', simulator:'Simulador', liveMap:'Mapa en Vivo',
+              historyForecast:'Historial y Pronóstico', compareCities:'Comparar Ciudades',
+              healthProfile:'Perfil de Salud', mlStats:'Stats ML', liveDash:'Panel en Vivo',
+              predict:'Predecir AQI', reset:'Restablecer', searchCity:'Buscar ciudad...',
+              myLocation:'Mi Ubicación', startMonitor:'Iniciar Monitor', stop:'Detener',
+              downloadPDF:'Descargar Informe PDF', shareResult:'Compartir Resultado',
+              evaluateRisk:'Evaluar Riesgo', compareNow:'Comparar Ahora' },
+        fr: { smartPredictor:'Prédicteur Intelligent', simulator:'Simulateur', liveMap:'Carte en Direct',
+              historyForecast:'Historique et Prévision', compareCities:'Comparer les Villes',
+              healthProfile:'Profil Santé', mlStats:'Stats ML', liveDash:'Tableau de Bord Live',
+              predict:"Prédire l'AQI", reset:'Réinitialiser', searchCity:'Rechercher une ville...',
+              myLocation:'Ma Position', startMonitor:'Démarrer', stop:'Arrêter',
+              downloadPDF:'Télécharger Rapport PDF', shareResult:'Partager',
+              evaluateRisk:'Évaluer le Risque', compareNow:'Comparer Maintenant' },
+        ar: { smartPredictor:'المتنبئ الذكي', simulator:'المحاكي', liveMap:'الخريطة الحية',
+              historyForecast:'التاريخ والتوقعات', compareCities:'مقارنة المدن',
+              healthProfile:'الملف الصحي', mlStats:'إحصائيات ML', liveDash:'لوحة مباشرة',
+              predict:'توقع جودة الهواء', reset:'إعادة تعيين', searchCity:'ابحث عن مدينة...',
+              myLocation:'موقعي', startMonitor:'بدء المراقبة', stop:'إيقاف',
+              downloadPDF:'تنزيل تقرير PDF', shareResult:'مشاركة النتيجة',
+              evaluateRisk:'تقييم الخطر', compareNow:'قارن الآن' },
+        zh: { smartPredictor:'智能预测器', simulator:'模拟器', liveMap:'实时地图',
+              historyForecast:'历史与预测', compareCities:'城市对比',
+              healthProfile:'健康档案', mlStats:'ML统计', liveDash:'实时看板',
+              predict:'预测AQI', reset:'重置', searchCity:'搜索城市...',
+              myLocation:'我的位置', startMonitor:'开始监测', stop:'停止',
+              downloadPDF:'下载PDF报告', shareResult:'分享结果',
+              evaluateRisk:'评估风险', compareNow:'立即对比' }
+    };
+    let currentLang = localStorage.getItem('lang') || 'en';
+
+    function setLanguage(lang) {
+        currentLang = lang;
+        localStorage.setItem('lang', lang);
+        document.getElementById('langSelect').value = lang;
+        const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+        // Update tab buttons
+        const tabMap = {predictor:'smartPredictor', simulator:'simulator', map:'liveMap',
+            history:'historyForecast', compare:'compareCities', health:'healthProfile',
+            insights:'mlStats', realtime:'liveDash'};
+        Object.entries(tabMap).forEach(([id, key]) => {
+            const el = document.querySelector(`[onclick="switchTab('${id}')"]`);
+            if (el && t[key]) el.childNodes[el.childNodes.length-1].textContent = ' '+t[key];
+        });
+        // RTL for Arabic
+        document.body.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+        // Update placeholders
+        if (t.searchCity) {
+            ['citySearchInput','histCityInput','cmp1Input','cmp2Input','rtCityInput']
+                .forEach(id => { const el=document.getElementById(id); if(el) el.placeholder=t.searchCity; });
+        }
+    }
+    // Apply saved language on load
+    document.addEventListener('DOMContentLoaded', () => {
+        if (currentLang !== 'en') setLanguage(currentLang);
+    });
+
+    // ===================== AQI NOTIFICATION BELL =====================
+    let notifEnabled = false, notifThresholdVal = 100, notifInterval = null;
+
+    function toggleNotifPanel() {
+        const p = document.getElementById('notifPanel');
+        p.style.display = p.style.display === 'none' ? 'block' : 'none';
+    }
+    document.addEventListener('click', e => {
+        const panel = document.getElementById('notifPanel');
+        const bell = document.getElementById('notifBell');
+        if (panel && !panel.contains(e.target) && !bell.contains(e.target)) panel.style.display='none';
+    });
+
+    async function enableNotifications() {
+        if (!('Notification' in window)) {
+            document.getElementById('notifStatus').textContent = '❌ Browser does not support notifications.';
+            return;
+        }
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') {
+            document.getElementById('notifStatus').textContent = '❌ Permission denied. Enable in browser settings.';
+            return;
+        }
+        notifThresholdVal = parseInt(document.getElementById('notifThreshold').value) || 100;
+        notifEnabled = true;
+        document.getElementById('notifStatus').textContent = `✅ Active! Alert when AQI > ${notifThresholdVal}`;
+        document.getElementById('notifDot').style.display = 'block';
+        document.getElementById('bellIcon').className = 'fa-solid fa-bell fa-shake';
+        // Poll GPS AQI every 5 minutes
+        if (notifInterval) clearInterval(notifInterval);
+        notifInterval = setInterval(checkAqiAlert, 5 * 60 * 1000);
+        checkAqiAlert();
+    }
+
+    async function checkAqiAlert() {
+        if (!notifEnabled || !navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(async pos => {
+            try {
+                const res = await fetch(`/api/aqi-by-coords?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`);
+                const d = await res.json();
+                if (d.success && d.data.overall_aqi > notifThresholdVal) {
+                    new Notification('⚠️ AQI Alert — Air Quality Deteriorating!', {
+                        body: `AQI: ${d.data.overall_aqi} (${d.data.category}) — Your threshold is ${notifThresholdVal}.\n${d.data.advice}`,
+                        icon: '/favicon.ico'
+                    });
+                }
+            } catch(e) {}
+        });
+    }
+
+    function testNotification() {
+        if (Notification.permission === 'granted') {
+            new Notification('🧪 AQI Alert Test', {
+                body: 'Notifications are working! You will be alerted when AQI crosses your threshold.'
+            });
+        } else {
+            alert('Please click Enable first to activate notifications.');
+        }
+    }
+
+    // ===================== REAL-TIME DASHBOARD (WebSocket) =====================
+    let _socket = null, _rtChart = null, _rtLabels = [], _rtData = [];
+    let _rtLat = null, _rtLon = null, _rtLabel = '', _rtTimer = null;
+
+    function debouncedRtSearch() {
+        makeCitySearch('rtCityInput', 'rtCityDropdown', (lat, lon, label) => {
+            _rtLat = lat; _rtLon = lon; _rtLabel = label;
+        });
+    }
+
+    function useGpsRealtime() {
+        if (!navigator.geolocation) return alert('Geolocation not supported');
+        navigator.geolocation.getCurrentPosition(p => {
+            _rtLat = p.coords.latitude; _rtLon = p.coords.longitude;
+            _rtLabel = 'Your Location';
+            document.getElementById('rtCityInput').value = 'Your Location';
+            startRtMonitor();
+        });
+    }
+
+    function startRtMonitor() {
+        if (!_rtLat || !_rtLon) {
+            document.getElementById('rtStatus').textContent = '⚠️ Please select a city first.';
+            return;
+        }
+        // Connect socket
+        if (!_socket) {
+            _socket = io();
+            _socket.on('realtime_update', onRtUpdate);
+            _socket.on('realtime_error', d => {
+                document.getElementById('rtStatus').textContent = '❌ Error: ' + d.msg;
+                document.getElementById('rtDot').style.background = '#ff4444';
+            });
+            _socket.on('connect', () => {
+                document.getElementById('rtDot').style.background = '#00ffb7';
+                document.getElementById('rtStatus').textContent = `🟢 Connected — monitoring ${_rtLabel}`;
+            });
+            _socket.on('disconnect', () => {
+                document.getElementById('rtDot').style.background = '#6b7280';
+                document.getElementById('rtStatus').textContent = '⚫ Disconnected';
+            });
+        }
+        // Show stop button
+        document.getElementById('rtStartBtn').style.display = 'none';
+        document.getElementById('rtStopBtn').style.display = 'inline-flex';
+        document.getElementById('rtMetrics').style.display = 'grid';
+        document.getElementById('rtChartCard').style.display = 'block';
+        document.getElementById('rtLocation').textContent = _rtLabel;
+        // Init chart
+        initRtChart();
+        // Request first data
+        fetchRtData();
+        // Auto-refresh every 30s
+        if (_rtTimer) clearInterval(_rtTimer);
+        _rtTimer = setInterval(fetchRtData, 30000);
+    }
+
+    function fetchRtData() {
+        if (_socket && _socket.connected && _rtLat && _rtLon) {
+            document.getElementById('rtStatus').textContent = `🟢 Fetching data for ${_rtLabel}...`;
+            _socket.emit('subscribe_realtime', { lat: _rtLat, lon: _rtLon, label: _rtLabel });
+        }
+    }
+
+    function stopRtMonitor() {
+        if (_rtTimer) { clearInterval(_rtTimer); _rtTimer = null; }
+        if (_socket) { _socket.disconnect(); _socket = null; }
+        document.getElementById('rtStartBtn').style.display = 'inline-flex';
+        document.getElementById('rtStopBtn').style.display = 'none';
+        document.getElementById('rtDot').style.background = '#6b7280';
+        document.getElementById('rtStatus').textContent = 'Monitoring stopped.';
+    }
+
+    function onRtUpdate(d) {
+        // Update metric cards
+        document.getElementById('rtAqiVal').textContent = d.overall_aqi;
+        document.getElementById('rtAqiVal').style.color = d.color;
+        document.getElementById('rtAqiCat').textContent = d.category;
+        document.getElementById('rtPm25').textContent = d.pm25.toFixed(1);
+        document.getElementById('rtPm25Aqi').textContent = d.sub_indices['PM2.5'] || '—';
+        document.getElementById('rtNo2').textContent = d.sub_indices['NO2'] || '—';
+        document.getElementById('rtO3').textContent = d.sub_indices['O3'] || '—';
+        document.getElementById('rtLastUpdate').textContent = 'Last update: ' + d.timestamp;
+        document.getElementById('rtStatus').textContent = `🟢 Live — ${d.label}`;
+        // Add to chart
+        const now = new Date().toLocaleTimeString();
+        _rtLabels.push(now);
+        _rtData.push(d.overall_aqi);
+        if (_rtLabels.length > 20) { _rtLabels.shift(); _rtData.shift(); }
+        if (_rtChart) {
+            _rtChart.data.labels = [..._rtLabels];
+            _rtChart.data.datasets[0].data = [..._rtData];
+            _rtChart.data.datasets[0].pointBackgroundColor = _rtData.map(v =>
+                v<=50?'#00e400':v<=100?'#ffff00':v<=150?'#ff7e00':v<=200?'#ff0000':'#8f3f97');
+            _rtChart.update('active');
+        }
+        // Auto-trigger notification if enabled
+        if (notifEnabled && d.overall_aqi > notifThresholdVal && Notification.permission==='granted') {
+            new Notification('⚠️ AQI Alert!', { body: `${d.label}: AQI ${d.overall_aqi} (${d.category})` });
+        }
+    }
+
+    function initRtChart() {
+        _rtLabels = []; _rtData = [];
+        const ctx = document.getElementById('rtChart').getContext('2d');
+        if (_rtChart) _rtChart.destroy();
+        _rtChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'AQI', data: [], borderColor: '#00ffb7',
+                backgroundColor: 'rgba(0,255,183,0.08)', pointRadius: 6, pointHoverRadius: 9,
+                tension: 0.4, fill: true, pointBackgroundColor: [] }] },
+            options: { responsive: true, maintainAspectRatio: false, animation: { duration: 400 },
+                plugins: { legend: { display: false } },
+                scales: { x: { ticks: { color: '#9ca3af', maxTicksLimit: 8 } },
+                          y: { min: 0, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.04)' } } } }
+        });
+    }
+
+    // Add rtCityDropdown to close-on-outside-click list
+    document.addEventListener('click', e => {
+        const el = document.getElementById('rtCityDropdown');
+        if (el) {
+            const inp = document.getElementById('rtCityInput');
+            if (!el.contains(e.target) && inp && !inp.contains(e.target)) el.style.display='none';
+        }
+    });
+    </script>
 </body>
+
 
 
 </html>

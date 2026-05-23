@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | AQI Predictor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #030712; --card: rgba(17,24,39,0.8); --border: rgba(255,255,255,0.08);
+            --primary: #00ffb7; --secondary: #00bfff; --text: #f3f4f6; --muted: #9ca3af;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Outfit',sans-serif; }
+        body { background:var(--bg); color:var(--text); min-height:100vh; }
+        body::before {
+            content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
+            background: radial-gradient(circle at 15% 20%, rgba(0,255,183,0.07) 0%, transparent 40%),
+                        radial-gradient(circle at 85% 80%, rgba(0,191,255,0.07) 0%, transparent 40%);
+        }
+
+        /* ── Login ────────────────────────────────── */
+        .login-wrap { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+        .login-card {
+            background:var(--card); border:1px solid var(--border); border-radius:24px;
+            padding:48px; width:100%; max-width:420px; text-align:center;
+            backdrop-filter:blur(20px);
+        }
+        .login-card .icon { font-size:48px; color:var(--primary); margin-bottom:16px; }
+        .login-card h1 { font-size:28px; font-weight:800; margin-bottom:6px; }
+        .login-card p { color:var(--muted); font-size:14px; margin-bottom:32px; }
+        .login-card input {
+            width:100%; background:rgba(255,255,255,0.05); border:1px solid var(--border);
+            border-radius:14px; padding:14px 18px; color:var(--text); font-size:15px;
+            outline:none; margin-bottom:14px;
+        }
+        .login-card input:focus { border-color:var(--primary); }
+        .login-card button {
+            width:100%; background:linear-gradient(135deg,var(--primary),var(--secondary));
+            border:none; border-radius:14px; padding:14px; color:#030712;
+            font-size:16px; font-weight:800; cursor:pointer;
+        }
+        .error { background:rgba(255,0,0,0.1); border:1px solid rgba(255,80,80,0.3);
+            border-radius:10px; padding:10px 16px; font-size:13px; color:#ff6b6b; margin-bottom:14px; }
+
+        /* ── Dashboard ───────────────────────────── */
+        header {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:18px 6%; background:rgba(3,7,18,0.7); backdrop-filter:blur(16px);
+            border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100;
+        }
+        .logo { font-size:22px; font-weight:800; background:linear-gradient(135deg,var(--primary),var(--secondary));
+            -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+        .logout-btn {
+            background:rgba(255,255,255,0.05); border:1px solid var(--border);
+            border-radius:10px; padding:8px 18px; color:var(--muted);
+            cursor:pointer; font-size:13px; text-decoration:none; transition:all 0.2s;
+        }
+        .logout-btn:hover { border-color:var(--primary); color:var(--primary); }
+
+        main { max-width:1200px; margin:0 auto; padding:30px 24px; }
+        h2 { font-size:22px; font-weight:700; margin-bottom:20px; }
+        h2 i { color:var(--primary); margin-right:8px; }
+
+        /* Stats grid */
+        .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:32px; }
+        .stat-box {
+            background:var(--card); border:1px solid var(--border); border-radius:18px;
+            padding:24px 20px; text-align:center; backdrop-filter:blur(12px);
+            transition:transform 0.2s;
+        }
+        .stat-box:hover { transform:translateY(-2px); }
+        .stat-box .s-icon { font-size:28px; margin-bottom:10px; }
+        .stat-box .s-val { font-size:40px; font-weight:800; margin-bottom:4px; }
+        .stat-box .s-lbl { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+
+        /* Cards */
+        .card {
+            background:var(--card); border:1px solid var(--border); border-radius:20px;
+            padding:24px; margin-bottom:24px; backdrop-filter:blur(12px);
+        }
+
+        /* Activity table */
+        table { width:100%; border-collapse:collapse; font-size:13px; }
+        thead th { color:var(--muted); font-weight:600; text-align:left;
+            padding:10px 14px; border-bottom:1px solid var(--border); text-transform:uppercase; font-size:11px; }
+        tbody tr { border-bottom:1px solid rgba(255,255,255,0.04); }
+        tbody tr:last-child { border-bottom:none; }
+        tbody td { padding:10px 14px; }
+        .badge {
+            display:inline-block; padding:3px 10px; border-radius:20px;
+            font-size:11px; font-weight:700; text-transform:uppercase;
+        }
+        .badge-visit  { background:rgba(0,255,183,0.12); color:#00ffb7; }
+        .badge-pred   { background:rgba(0,191,255,0.12); color:#00bfff; }
+        .badge-api    { background:rgba(143,63,151,0.2); color:#c084fc; }
+
+        .chart-wrap { height:220px; }
+        @media(max-width:600px) { .stats-grid { grid-template-columns:1fr 1fr; } }
+    </style>
+</head>
+<body>
+
+{% if not logged_in %}
+<!-- ──────── LOGIN ──────── -->
+<div class="login-wrap">
+    <div class="login-card">
+        <div class="icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <h1>Admin Panel</h1>
+        <p>AQI Predictor — Usage Statistics Dashboard</p>
+        {% if error %}
+        <div class="error"><i class="fa-solid fa-circle-exclamation"></i> {{ error }}</div>
+        {% endif %}
+        <form method="POST">
+            <input type="password" name="password" placeholder="Enter admin password" autofocus>
+            <button type="submit"><i class="fa-solid fa-right-to-bracket"></i> Sign In</button>
+        </form>
+    </div>
+</div>
+
+{% else %}
+<!-- ──────── DASHBOARD ──────── -->
+<header>
+    <div class="logo"><i class="fa-solid fa-wind" style="-webkit-text-fill-color:initial;color:var(--primary);margin-right:8px;"></i>AQI Admin</div>
+    <a href="/admin/logout" class="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+</header>
+
+<main>
+    <h2><i class="fa-solid fa-chart-line"></i>Usage Statistics</h2>
+
+    <!-- Stat boxes -->
+    <div class="stats-grid">
+        <div class="stat-box">
+            <div class="s-icon" style="color:#00ffb7;"><i class="fa-solid fa-users"></i></div>
+            <div class="s-val" style="color:#00ffb7;">{{ visits }}</div>
+            <div class="s-lbl">Total Visits</div>
+        </div>
+        <div class="stat-box">
+            <div class="s-icon" style="color:#00bfff;"><i class="fa-solid fa-brain"></i></div>
+            <div class="s-val" style="color:#00bfff;">{{ preds }}</div>
+            <div class="s-lbl">Predictions</div>
+        </div>
+        <div class="stat-box">
+            <div class="s-icon" style="color:#c084fc;"><i class="fa-solid fa-code"></i></div>
+            <div class="s-val" style="color:#c084fc;">{{ api_calls }}</div>
+            <div class="s-lbl">API Calls</div>
+        </div>
+        <div class="stat-box">
+            <div class="s-icon" style="color:#fb923c;"><i class="fa-solid fa-calendar-day"></i></div>
+            <div class="s-val" style="color:#fb923c;">{{ today }}</div>
+            <div class="s-lbl">Today</div>
+        </div>
+        <div class="stat-box">
+            <div class="s-icon" style="color:#f472b6;"><i class="fa-solid fa-calendar-week"></i></div>
+            <div class="s-val" style="color:#f472b6;">{{ week }}</div>
+            <div class="s-lbl">This Week</div>
+        </div>
+    </div>
+
+    <!-- Activity Chart -->
+    <div class="card">
+        <h2 style="margin-bottom:16px;font-size:18px;"><i class="fa-solid fa-chart-bar"></i>Daily Activity (Last 7 Days)</h2>
+        <div class="chart-wrap"><canvas id="activityChart"></canvas></div>
+    </div>
+
+    <!-- Recent Events -->
+    <div class="card">
+        <h2 style="margin-bottom:16px;font-size:18px;"><i class="fa-solid fa-list-check"></i>Recent Activity (Last 30 Events)</h2>
+        <table>
+            <thead>
+                <tr><th>Type</th><th>Detail</th><th>Time (UTC)</th></tr>
+            </thead>
+            <tbody>
+                {% for ev in recent %}
+                <tr>
+                    <td>
+                        {% if ev[0] == 'page_visit' %}
+                            <span class="badge badge-visit">Visit</span>
+                        {% elif ev[0] == 'prediction' %}
+                            <span class="badge badge-pred">Prediction</span>
+                        {% else %}
+                            <span class="badge badge-api">API</span>
+                        {% endif %}
+                    </td>
+                    <td style="color:var(--muted);">{{ ev[1] }}</td>
+                    <td style="color:var(--muted);font-size:12px;">{{ ev[2] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</main>
+
+<script>
+const dailyData = {{ daily | tojson }};
+const labels = dailyData.map(d => d[0]);
+const counts = dailyData.map(d => d[1]);
+const ctx = document.getElementById('activityChart').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels,
+        datasets: [{
+            label: 'Events',
+            data: counts,
+            backgroundColor: 'rgba(0,255,183,0.6)',
+            borderColor: '#00ffb7',
+            borderRadius: 8,
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            x: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+            y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+        }
+    }
+});
+</script>
+{% endif %}
+</body>
+</html>

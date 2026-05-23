@@ -1,16 +1,61 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from flask_socketio import SocketIO, emit
 import numpy as np
 import pandas as pd
 import joblib
 import os
 import json
 import urllib.request
+import sqlite3
+import time
+from datetime import datetime
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY', 'aqi-secret-zk-2026-xK9')
+socketio = SocketIO(app, cors_allowed_origins='*', async_mode='eventlet')
+
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'aqiadmin2026')
 
 # Base paths
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-MODELS_DIR = os.path.join(PROJECT_DIR, "models")
+MODELS_DIR = os.path.join(PROJECT_DIR, 'models')
+DB_PATH = os.path.join(PROJECT_DIR, 'stats.db')
+
+# ─── SQLite Stats DB ────────────────────────────────────────────────────────
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS events (
+            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            event     TEXT NOT NULL,
+            detail    TEXT DEFAULT '',
+            ts        DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def log_event(event, detail=''):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute('INSERT INTO events(event,detail) VALUES(?,?)', (event, str(detail)[:200]))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
+init_db()
+
+# ─── Request logging middleware ──────────────────────────────────────────────
+@app.before_request
+def track_visit():
+    if request.path == '/' and request.method == 'GET':
+        log_event('page_visit', request.remote_addr)
+    elif request.path == '/predict':
+        log_event('prediction', 'form')
+    elif request.path.startswith('/api/'):
+        log_event('api_call', request.path)
 
 # Load models, scaler, and metadata
 models = {}
@@ -466,6 +511,99 @@ def compare():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+# ─── Admin Routes ───────────────────────────────────────────────────────────
+@app.route('/admin', methods=['GET', 'POST'])
+def admin():
+    if request.method == 'POST':
+        pwd = request.form.get('password', '')
+        if pwd == ADMIN_PASSWORD:
+            session['admin'] = True
+            return redirect(url_for('admin'))
+        return render_template('admin.html', error='Wrong password', logged_in=False)
+    if not session.get('admin'):
+        return render_template('admin.html', error=None, logged_in=False)
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM events WHERE event='page_visit'")
+    visits = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) FROM events WHERE event='prediction'")
+    preds = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) FROM events WHERE event='api_call'")
+    api_calls = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) FROM events WHERE ts >= date('now','-1 day')")
+    today = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) FROM events WHERE ts >= date('now','-7 days')")
+    week = c.fetchone()[0]
+    c.execute("SELECT event, detail, ts FROM events ORDER BY id DESC LIMIT 30")
+    recent = c.fetchall()
+    # daily chart data (last 7 days)
+    c.execute("""
+        SELECT date(ts) as day, COUNT(*) as cnt
+        FROM events GROUP BY day ORDER BY day DESC LIMIT 7
+    """)
+    daily = c.fetchall()
+    conn.close()
+    return render_template('admin.html', logged_in=True,
+        visits=visits, preds=preds, api_calls=api_calls,
+        today=today, week=week, recent=recent, daily=list(reversed(daily)))
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin', None)
+    return redirect(url_for('admin'))
+
+@app.route('/api/stats')
+def api_stats():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM events WHERE event='page_visit'")
+    visits = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) FROM events WHERE event='prediction'")
+    preds = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) FROM events WHERE event='api_call'")
+    api_calls = c.fetchone()[0]
+    conn.close()
+    return jsonify({'visits': visits, 'predictions': preds, 'api_calls': api_calls})
+
+# ─── SocketIO Real-time AQI ──────────────────────────────────────────────────
+@socketio.on('subscribe_realtime')
+def handle_subscribe(data):
+    lat = data.get('lat')
+    lon = data.get('lon')
+    label = data.get('label', 'Selected Location')
+    if not lat or not lon:
+        emit('realtime_error', {'msg': 'lat/lon required'})
+        return
+    try:
+        aqi_url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={lat}&longitude={lon}&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone"
+        req = urllib.request.Request(aqi_url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=8) as r:
+            d = json.loads(r.read().decode())
+        cur = d.get('current', {})
+        pm25 = float(cur.get('pm2_5') or 15)
+        pm10_v = float(cur.get('pm10') or 40)
+        no2 = float((cur.get('nitrogen_dioxide') or 25) * 0.53)
+        so2 = float((cur.get('sulphur_dioxide') or 5) * 0.38)
+        co  = float((cur.get('carbon_monoxide') or 300) * 0.00087)
+        o3  = float((cur.get('ozone') or 50) * 0.51)
+        sub = {
+            'PM2.5': calculate_aqi_subindex(pm25, 'PM2.5'),
+            'PM10':  calculate_aqi_subindex(pm10_v, 'PM10'),
+            'NO2':   calculate_aqi_subindex(no2, 'NO2'),
+            'SO2':   calculate_aqi_subindex(so2, 'SO2'),
+            'CO':    calculate_aqi_subindex(co, 'CO'),
+            'O3':    calculate_aqi_subindex(o3, 'O3'),
+        }
+        overall = max(sub.values())
+        cat, color, desc, advice = get_aqi_category(overall)
+        emit('realtime_update', {
+            'label': label, 'overall_aqi': overall, 'category': cat,
+            'color': color, 'sub_indices': sub, 'pm25': pm25,
+            'timestamp': datetime.utcnow().strftime('%H:%M:%S UTC')
+        })
+    except Exception as e:
+        emit('realtime_error', {'msg': str(e)})
+
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5001))
-    app.run(debug=False, host="0.0.0.0", port=port)
+    port = int(os.environ.get('PORT', 5001))
+    socketio.run(app, debug=False, host='0.0.0.0', port=port)
