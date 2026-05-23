@@ -350,9 +350,6 @@ def aqi_by_coords():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5001))
-    app.run(debug=False, host="0.0.0.0", port=port)
 
 @app.route('/api/city-search', methods=['GET'])
 def city_search():
@@ -468,3 +465,7 @@ def compare():
         return jsonify({"success": True, "location1": loc1, "location2": loc2})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5001))
+    app.run(debug=False, host="0.0.0.0", port=port)
