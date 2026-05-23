@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Air Quality Index Predictor & Simulator | Mr. Zille Kibriya</title>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Leaflet.js Map Assets -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <style>
+        :root {
+            --bg-dark: #030712;
+            --card-bg: rgba(17, 24, 39, 0.5);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --primary: #00ffb7;
+            --secondary: #00bfff;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+
+            /* AQI Colors */
+            --aqi-good: #00e400;
+            --aqi-moderate: #ffff00;
+            --aqi-sensitive: #ff7e00;
+            --aqi-unhealthy: #ff0000;
+            --aqi-very-unhealthy: #8f3f97;
+            --aqi-hazardous: #7e0023;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Ambient backgrounds */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 10% 20%, rgba(0, 255, 183, 0.07) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 191, 255, 0.07) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(143, 63, 151, 0.04) 0%, transparent 50%);
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        /* Navigation Header */
+        header {
+            width: 100%;
+            padding: 20px 6%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(3, 7, 18, 0.6);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-glass);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 26px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .developer-badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glass);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .developer-badge i {
+            font-size: 11px;
+        }
+
+        /* Tab Switcher */
+        .tabs-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px auto 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glass);
+            padding: 6px;
+            border-radius: 30px;
+            width: 90%;
+            max-width: 600px;
+            backdrop-filter: blur(10px);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 25px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, rgba(0, 255, 183, 0.15), rgba(0, 191, 255, 0.15));
+            border: 1px solid rgba(0, 255, 183, 0.3);
+            color: var(--primary);
+            box-shadow: 0 4px 15px rgba(0, 255, 183, 0.1);
+        }
+
+        /* Main Container */
+        main {
+            flex: 1;
+            width: 100%;
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 20px 4% 60px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Dashboard Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        @media (max-width: 968px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Glassmorphic Cards */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-glass);
+            backdrop-filter: blur(24px);
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(to right, rgba(0, 255, 183, 0.2), rgba(0, 191, 255, 0.2), transparent);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-main);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 12px;
+        }
+
+        .card-title i {
+            color: var(--primary);
+        }
+
+        /* Forms styling */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 480px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .input-group label span {
+            color: var(--secondary);
+            font-size: 11px;
+        }
+
+        .input-group input,
+        .input-group select {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: var(--text-main);
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 0 3px rgba(0, 255, 183, 0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            color: #030712;
+            padding: 16px 24px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(0, 255, 183, 0.25);
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 255, 183, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glass);
+            color: var(--text-main);
+            padding: 16px 24px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--secondary);
+        }
+
+        .btn-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        /* Visual AQI Gauge & Meter */
+        .aqi-summary-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            margin-bottom: 25px;
+        }
+
+        .aqi-gauge-outer {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: conic-gradient(var(--aqi-good) 0% 10%,
+                    var(--aqi-moderate) 10% 20%,
+                    var(--aqi-sensitive) 20% 30%,
+                    var(--aqi-unhealthy) 30% 40%,
+                    var(--aqi-very-unhealthy) 40% 60%,
+                    var(--aqi-hazardous) 60% 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6);
+            animation: pulse-glow 3s infinite alternate;
+        }
+
+        .aqi-gauge-inner {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: #0d1321;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid var(--border-glass);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .aqi-value {
+            font-size: 52px;
+            font-weight: 800;
+            font-family: 'Outfit', sans-serif;
+            line-height: 1;
+            margin-top: 8px;
+        }
+
+        .aqi-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .aqi-status-text {
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 20px;
+            padding: 6px 16px;
+            border-radius: 12px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .aqi-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 12px;
+            line-height: 1.5;
+            max-width: 320px;
+        }
+
+        /* Health Recommendations Card */
+        .health-advice-box {
+            display: flex;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+            align-items: flex-start;
+        }
+
+        .health-advice-icon {
+            font-size: 24px;
+            color: var(--primary);
+            background: rgba(0, 255, 183, 0.1);
+            padding: 12px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .health-advice-text h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: var(--text-main);
+        }
+
+        .health-advice-text p {
+            font-size: 13.5px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Simulator Sliders Section */
+        .sliders-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .slider-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .slider-name i {
+            color: var(--secondary);
+            font-size: 12px;
+            width: 16px;
+            text-align: center;
+        }
+
+        .slider-value {
+            color: var(--primary);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            background: rgba(0, 255, 183, 0.1);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .slider-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .slider-input-wrapper input[type="range"] {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            transition: background 0.3s;
+        }
+
+        .slider-input-wrapper input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 255, 183, 0.5);
+            transition: transform 0.1s;
+        }
+
+        .slider-input-wrapper input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .slider-unit {
+            font-size: 11px;
+            color: var(--text-muted);
+            width: 50px;
+            text-align: left;
+        }
+
+        /* Metric Dashboard Badges */
+        .info-badges {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .badge-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-glass);
+            border-radius: 14px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .badge-icon {
+            font-size: 20px;
+            color: var(--secondary);
+            background: rgba(0, 191, 255, 0.1);
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .badge-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .badge-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .badge-value {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-top: 2px;
+        }
+
+        /* Model Comparison & Analytics Page Layout */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .metric-comparison-card {
+            background: rgba(17, 24, 39, 0.3);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .model-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .model-name-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .model-rank-badge {
+            background: rgba(0, 255, 183, 0.15);
+            border: 1px solid rgba(0, 255, 183, 0.3);
+            color: var(--primary);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .metric-score-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .metric-score-row:last-child {
+            border-bottom: none;
+        }
+
+        .metric-score-label {
+            color: var(--text-muted);
+        }
+
+        .metric-score-val {
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            color: var(--secondary);
+        }
+
+        /* Dataset Statistics Table */
+        .stats-table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .stats-table th,
+        .stats-table td {
+            padding: 14px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 14px;
+        }
+
+        .stats-table th {
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .stats-table tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .stats-table td strong {
+            color: var(--primary);
+        }
+
+        /* Chart container */
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+            margin-top: 25px;
+        }
+
+        /* Animations */
+        @keyframes pulse-glow {
+            0% {
+                box-shadow: 0 0 15px rgba(0, 255, 183, 0.15);
+            }
+
+            100% {
+                box-shadow: 0 0 30px rgba(0, 255, 183, 0.35);
+            }
+        }
+
+        /* Footer */
+        footer {
+            margin-top: auto;
+            background: rgba(3, 7, 18, 0.8);
+            border-top: 1px solid var(--border-glass);
+            padding: 40px 6% 30px;
+            font-size: 13.5px;
+            color: var(--text-muted);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .footer-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+        }
+
+        .footer-col h4 {
+            color: var(--text-main);
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .footer-col p {
+            line-height: 1.6;
+        }
+
+        .footer-col ul {
+            list-style: none;
+        }
+
+        .footer-col ul li {
+            margin-bottom: 10px;
+        }
+
+        .footer-col ul li a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-col ul li a:hover {
+            color: var(--primary);
+        }
+
+        .copyright-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 20px;
+            font-size: 12px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .copyright-section a {
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-left: 20px;
+        }
+
+        .copyright-section a:hover {
+            color: var(--secondary);
+        }
+
+        /* Placeholder states */
+        .placeholder-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 350px;
+            text-align: center;
+            color: var(--text-muted);
+            padding: 30px;
+        }
+
+        .placeholder-state i {
+            font-size: 64px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.1));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+
+        .placeholder-state h3 {
+            color: var(--text-main);
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .placeholder-state p {
+            font-size: 14px;
+            max-width: 280px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="logo">
+            <i class="fa-solid fa-wind"></i> AQI <span>Predictor & Simulator</span>
+        </div>
+        <div class="developer-badge">
+            <i class="fa-solid fa-code"></i> Developed by Zille Kibriya
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-container">
+        <button class="tab-btn active" onclick="switchTab('predictor')">
+            <i class="fa-solid fa-brain"></i> Smart Predictor
+        </button>
+        <button class="tab-btn" onclick="switchTab('simulator')">
+            <i class="fa-solid fa-sliders"></i> Simulator Playground
+        </button>
+        <button class="tab-btn" onclick="switchTab('insights')">
+            <i class="fa-solid fa-chart-line"></i> Model Performance & Stats
+        </button>
+    </div>
+
+    <!-- Main Content Area -->
+    <main>
+
+        <!-- ================= TAB 1: SMART PREDICTOR ================= -->
+        <section id="predictor-tab" class="tab-content active">
+            <div class="dashboard-grid">
+
+                <!-- Left Input Form -->
+                <div class="card">
+                    <h2 class="card-title"><i class="fa-solid fa-sliders"></i> Enter Environment Parameters</h2>
+                    <form id="predictorForm" action="/predict" method="post">
+                        <div class="form-grid">
+                            <div class="input-group">
+                                <label for="form_pm25">PM2.5 Value <span>(µg/m³ - Optional)</span></label>
+                                <input type="number" step="any" name="PM25" id="form_pm25"
+                                    placeholder="Leave blank to predict via AI"
+                                    value="{{ result.inputs.PM25 if (result and result.inputs.PM25) else '' }}">
+                            </div>
+                            <div class="input-group">
+                                <label for="form_pm10">PM10 Value <span>(µg/m³)</span></label>
+                                <input type="number" step="any" name="PM10" id="form_pm10" placeholder="e.g. 70"
+                                    required value="{{ result.inputs.PM10 if result else '70.0' }}">
+                            </div>
+                            <div class="input-group">
+                                <label for="form_no2">NO2 Value <span>(ppb)</span></label>
+                                <input type="number" step="any" name="NO2" id="form_no2" placeholder="e.g. 35" required
+                                    value="{{ result.inputs.NO2 if result else '35.0' }}">
+                            </div>
+                            <div class="input-group">
+                                <label for="form_so2">SO2 Value <span>(ppb)</span></label>
+                                <input type="number" step="any" name="SO2" id="form_so2" placeholder="e.g. 10" required
+                                    value="{{ result.inputs.SO2 if result else '10.0' }}">
+                            </div>
+                            <div class="input-group">
+                                <label for="form_co">CO Value <span>(ppm)</span></label>
+                                <input type="number" step="any" name="CO" id="form_co" placeholder="e.g. 0.8" required
+                                    value="{{ result.inputs.CO if result else '0.8' }}">
+                            </div>
+                            <div class="input-group">
+                                <label for="form_o3">O3 Value <span>(ppb)</span></label>
+                                <input type="number" step="any" name="O3" id="form_o3" placeholder="e.g. 25" required
+                                    value="{{ result.inputs.O3 if result else '25.0' }}">
+                            </div>
+                            <div class="input-group">
+                                <label for="form_temp">Temperature <span>(°C)</span></label>
+                                <input type="number" step="any" name="temperature" id="form_temp" placeholder="e.g. 28"
+                                    required value="{{ result.inputs.temperature if result else '28.0' }}">
+                            </div>
+                            <div class="input-group">
+                                <label for="form_humidity">Humidity <span>(%)</span></label>
+                                <input type="number" step="any" name="humidity" id="form_humidity" placeholder="e.g. 70"
+                                    required value="{{ result.inputs.humidity if result else '70.0' }}">
+                            </div>
+                            <div class="input-group">
+                                <label for="form_wind">Wind Speed <span>(m/s)</span></label>
+                                <input type="number" step="any" name="wind_speed" id="form_wind" placeholder="e.g. 2.5"
+                                    required value="{{ result.inputs.wind_speed if result else '2.5' }}">
+                            </div>
+                        </div>
+
+                        <div class="input-group" style="margin-top: 20px;">
+                            <label for="form_model">Machine Learning Regressor</label>
+                            <select name="model_name" id="form_model">
+                                <option value="random_forest" {% if result and result.model_used=='random_forest'
+                                    %}selected{% endif %}>Random Forest Regressor (Ensemble)</option>
+                                <option value="gradient_boosting" {% if result and
+                                    result.model_used=='gradient_boosting' %}selected{% endif %}>Gradient Boosting
+                                    Regressor</option>
+                                <option value="linear_regression" {% if result and
+                                    result.model_used=='linear_regression' %}selected{% endif %}>Linear Regression
+                                    (Baseline)</option>
+                            </select>
+                        </div>
+
+                        <div class="btn-actions">
+                            <button type="submit" class="btn-primary">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Predict Air Quality
+                            </button>
+                            <button type="button" class="btn-secondary" id="autoFetchPredictor">
+                                <i class="fa-solid fa-location-crosshairs"></i> Auto-Fill (GPS)
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Right Results Panel -->
+                <div class="card" id="predictorResultsCard">
+                    {% if result %}
+                    <h2 class="card-title"><i class="fa-solid fa-chart-pie"></i> Diagnostic Insights</h2>
+
+                    <div class="aqi-summary-card">
+                        <div class="aqi-gauge-outer"
+                            data-aqi="{{ result.overall_aqi }}"
+                            data-color="{{ result.color }}">
+                            <div class="aqi-gauge-inner">
+                                <div class="aqi-value" data-color="{{ result.color }}">{{ result.overall_aqi }}</div>
+                                <div class="aqi-label">US EPA AQI</div>
+                            </div>
+                        </div>
+                        <div class="aqi-status-text" data-bg-color="{{ result.color }}">{{ result.category }}</div>
+                        <div class="aqi-desc">{{ result.description }}</div>
+                    </div>
+
+                    <div class="info-badges">
+                        <div class="badge-card">
+                            <div class="badge-icon"><i class="fa-solid fa-smog"></i></div>
+                            <div class="badge-info">
+                                <span class="badge-label">Predicted PM2.5</span>
+                                <span class="badge-value">{{ result.predicted_pm25 }} µg/m³</span>
+                            </div>
+                        </div>
+                        <div class="badge-card">
+                            <div class="badge-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div class="badge-info">
+                                <span class="badge-label">Primary Pollutant</span>
+                                <span class="badge-value">{{ result.dominant_pollutant }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="health-advice-box">
+                        <div class="health-advice-icon">
+                            <i class="fa-solid fa-heart-pulse"></i>
+                        </div>
+                        <div class="health-advice-text">
+                            <h4>Health Guidelines & Precautions</h4>
+                            <p>{{ result.advice }}</p>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: 30px; font-size: 16px; font-weight: 700; color: var(--text-main);"><i
+                            class="fa-solid fa-chart-simple"></i> Pollutant Index Breakdown</h3>
+                    <div class="chart-container">
+                        <canvas id="predictorPollutantChart"></canvas>
+                    </div>
+
+                    {% else %}
+                    <div class="placeholder-state">
+                        <i class="fa-solid fa-wind-effects"></i>
+                        <h3>Awaiting Prediction Input</h3>
+                        <p>Fill out the environment parameters on the left and click "Predict" to see details.</p>
+                    </div>
+                    {% endif %}
+                    {% if result %}
+                    <script id="predictor-data" type="application/json">
+                        {"PM25": {{ result.sub_indices['PM2.5'] }}, "PM10": {{ result.sub_indices['PM10'] }}, "NO2": {{ result.sub_indices['NO2'] }}, "SO2": {{ result.sub_indices['SO2'] }}, "CO": {{ result.sub_indices['CO'] }}, "O3": {{ result.sub_indices['O3'] }}}
+                    </script>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 2: SIMULATOR PLAYGROUND ================= -->
+        <section id="simulator-tab" class="tab-content">
+            <div class="dashboard-grid">
+
+                <!-- Left Sliders Box -->
+                <div class="card">
+                    <h2 class="card-title"><i class="fa-solid fa-circle-play"></i> Real-time Interactive Sliders</h2>
+                    <div class="sliders-container">
+                        <!-- Model Selection -->
+                        <div class="input-group" style="margin-bottom: 10px;">
+                            <label for="sim_model">Active Prediction Model</label>
+                            <select id="sim_model" onchange="runSimulation()">
+                                <option value="random_forest">Random Forest Regressor (Ensemble)</option>
+                                <option value="gradient_boosting">Gradient Boosting Regressor</option>
+                                <option value="linear_regression">Linear Regression (Baseline)</option>
+                            </select>
+                        </div>
+
+                        <!-- PM10 Slider -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-name"><i class="fa-solid fa-cloud"></i> PM10 Concentration</span>
+                                <span class="slider-value" id="sim_val_pm10">70.0</span>
+                            </div>
+                            <div class="slider-input-wrapper">
+                                <input type="range" id="sim_pm10" min="0" max="250" step="0.5" value="70"
+                                    oninput="updateSliderLabel('pm10', this.value); runSimulation();">
+                                <span class="slider-unit">µg/m³</span>
+                            </div>
+                        </div>
+
+                        <!-- NO2 Slider -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-name"><i class="fa-solid fa-gas-pump"></i> NO2 Concentration</span>
+                                <span class="slider-value" id="sim_val_no2">35.0</span>
+                            </div>
+                            <div class="slider-input-wrapper">
+                                <input type="range" id="sim_no2" min="0" max="150" step="0.5" value="35"
+                                    oninput="updateSliderLabel('no2', this.value); runSimulation();">
+                                <span class="slider-unit">ppb</span>
+                            </div>
+                        </div>
+
+                        <!-- SO2 Slider -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-name"><i class="fa-solid fa-factory"></i> SO2 Concentration</span>
+                                <span class="slider-value" id="sim_val_so2">10.0</span>
+                            </div>
+                            <div class="slider-input-wrapper">
+                                <input type="range" id="sim_so2" min="0" max="80" step="0.5" value="10"
+                                    oninput="updateSliderLabel('so2', this.value); runSimulation();">
+                                <span class="slider-unit">ppb</span>
+                            </div>
+                        </div>
+
+                        <!-- CO Slider -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-name"><i class="fa-solid fa-car"></i> CO Concentration</span>
+                                <span class="slider-value" id="sim_val_co">0.800</span>
+                            </div>
+                            <div class="slider-input-wrapper">
+                                <input type="range" id="sim_co" min="0" max="8" step="0.05" value="0.8"
+                                    oninput="updateSliderLabel('co', parseFloat(this.value).toFixed(3)); runSimulation();">
+                                <span class="slider-unit">ppm</span>
+                            </div>
+                        </div>
+
+                        <!-- O3 Slider -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-name"><i class="fa-solid fa-sun"></i> O3 (Ozone)</span>
+                                <span class="slider-value" id="sim_val_o3">25.0</span>
+                            </div>
+                            <div class="slider-input-wrapper">
+                                <input type="range" id="sim_o3" min="0" max="150" step="0.5" value="25"
+                                    oninput="updateSliderLabel('o3', this.value); runSimulation();">
+                                <span class="slider-unit">ppb</span>
+                            </div>
+                        </div>
+
+                        <!-- Temperature Slider -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-name"><i class="fa-solid fa-temperature-three-quarters"></i>
+                                    Temperature</span>
+                                <span class="slider-value" id="sim_val_temp">28.0</span>
+                            </div>
+                            <div class="slider-input-wrapper">
+                                <input type="range" id="sim_temp" min="0" max="50" step="0.5" value="28"
+                                    oninput="updateSliderLabel('temp', this.value); runSimulation();">
+                                <span class="slider-unit">°C</span>
+                            </div>
+                        </div>
+
+                        <!-- Humidity Slider -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-name"><i class="fa-solid fa-droplet"></i> Humidity</span>
+                                <span class="slider-value" id="sim_val_humidity">70.0</span>
+                            </div>
+                            <div class="slider-input-wrapper">
+                                <input type="range" id="sim_humidity" min="10" max="100" step="1" value="70"
+                                    oninput="updateSliderLabel('humidity', this.value); runSimulation();">
+                                <span class="slider-unit">%</span>
+                            </div>
+                        </div>
+
+                        <!-- Wind Speed Slider -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="slider-name"><i class="fa-solid fa-wind"></i> Wind Speed</span>
+                                <span class="slider-value" id="sim_val_wind">2.5</span>
+                            </div>
+                            <div class="slider-input-wrapper">
+                                <input type="range" id="sim_wind" min="0" max="15" step="0.1" value="2.5"
+                                    oninput="updateSliderLabel('wind', this.value); runSimulation();">
+                                <span class="slider-unit">m/s</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 25px;">
+                        <button type="button" class="btn-secondary" id="autoFetchSimulator">
+                            <i class="fa-solid fa-location-crosshairs"></i> Load Live GPS Environment
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Results Box -->
+                <div class="card">
+                    <h2 class="card-title"><i class="fa-solid fa-gauge-high"></i> Simulated Response</h2>
+
+                    <div class="aqi-summary-card">
+                        <div class="aqi-gauge-outer" id="sim_gauge_outer">
+                            <div class="aqi-gauge-inner">
+                                <div class="aqi-value" id="sim_aqi_val" style="color: var(--aqi-good);">--</div>
+                                <div class="aqi-label">US EPA AQI</div>
+                            </div>
+                        </div>
+                        <div class="aqi-status-text" id="sim_status_badge"
+                            style="color: #030712; background-color: var(--aqi-good);">Pending</div>
+                        <div class="aqi-desc" id="sim_desc_text">Adjust the sliders to start simulation.</div>
+                    </div>
+
+                    <div class="info-badges">
+                        <div class="badge-card">
+                            <div class="badge-icon"><i class="fa-solid fa-smog"></i></div>
+                            <div class="badge-info">
+                                <span class="badge-label">Predicted PM2.5</span>
+                                <span class="badge-value" id="sim_pm25_val">-- µg/m³</span>
+                            </div>
+                        </div>
+                        <div class="badge-card">
+                            <div class="badge-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div class="badge-info">
+                                <span class="badge-label">Primary Pollutant</span>
+                                <span class="badge-value" id="sim_dominant_val">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="health-advice-box">
+                        <div class="health-advice-icon">
+                            <i class="fa-solid fa-heart-pulse"></i>
+                        </div>
+                        <div class="health-advice-text">
+                            <h4>Health Guidelines & Precautions</h4>
+                            <p id="sim_advice_text">Health safety messages will dynamically populate here based on the
+                                simulated AQI.</p>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: 30px; font-size: 16px; font-weight: 700; color: var(--text-main);"><i
+                            class="fa-solid fa-chart-simple"></i> Simulated Pollutant Sub-indices</h3>
+                    <div class="chart-container">
+                        <canvas id="simulatorPollutantChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: INSIGHTS & STATS ================= -->
+        <section id="insights-tab" class="tab-content">
+            <!-- Model Performance Cards -->
+            <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 20px; font-family: 'Outfit', sans-serif;"><i
+                    class="fa-solid fa-medal"></i> Machine Learning Model Performance</h2>
+            <div class="metrics-grid">
+                {% if metadata and metadata.metrics %}
+                <!-- Random Forest -->
+                <div class="metric-comparison-card">
+                    <div class="model-header">
+                        <span class="model-name-title"><i class="fa-solid fa-tree"></i> Random Forest Regressor</span>
+                        <span class="model-rank-badge">Default Model</span>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <div class="metric-score-row">
+                            <span class="metric-score-label">Mean Absolute Error (MAE)</span>
+                            <span class="metric-score-val">{{ "%.4f"|format(metadata.metrics.random_forest.mae)
+                                }}</span>
+                        </div>
+                        <div class="metric-score-row">
+                            <span class="metric-score-label">Root Mean Square Error (RMSE)</span>
+                            <span class="metric-score-val">{{ "%.4f"|format(metadata.metrics.random_forest.rmse)
+                                }}</span>
+                        </div>
+                        <div class="metric-score-row">
+                            <span class="metric-score-label">R-Squared (R²) Score</span>
+                            <span class="metric-score-val">{{ "%.4f"|format(metadata.metrics.random_forest.r2) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gradient Boosting -->
+                <div class="metric-comparison-card">
+                    <div class="model-header">
+                        <span class="model-name-title"><i class="fa-solid fa-bolt"></i> Gradient Boosting
+                            Regressor</span>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <div class="metric-score-row">
+                            <span class="metric-score-label">Mean Absolute Error (MAE)</span>
+                            <span class="metric-score-val">{{ "%.4f"|format(metadata.metrics.gradient_boosting.mae)
+                                }}</span>
+                        </div>
+                        <div class="metric-score-row">
+                            <span class="metric-score-label">Root Mean Square Error (RMSE)</span>
+                            <span class="metric-score-val">{{ "%.4f"|format(metadata.metrics.gradient_boosting.rmse)
+                                }}</span>
+                        </div>
+                        <div class="metric-score-row">
+                            <span class="metric-score-label">R-Squared (R²) Score</span>
+                            <span class="metric-score-val">{{ "%.4f"|format(metadata.metrics.gradient_boosting.r2)
+                                }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Linear Regression -->
+                <div class="metric-comparison-card">
+                    <div class="model-header">
+                        <span class="model-name-title"><i class="fa-solid fa-line-chart"></i> Linear Regression</span>
+                        <span class="model-rank-badge"
+                            style="background: rgba(0, 191, 255, 0.15); border-color: rgba(0, 191, 255, 0.3); color: var(--secondary);">Baseline</span>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <div class="metric-score-row">
+                            <span class="metric-score-label">Mean Absolute Error (MAE)</span>
+                            <span class="metric-score-val">{{ "%.4f"|format(metadata.metrics.linear_regression.mae)
+                                }}</span>
+                        </div>
+                        <div class="metric-score-row">
+                            <span class="metric-score-label">Root Mean Square Error (RMSE)</span>
+                            <span class="metric-score-val">{{ "%.4f"|format(metadata.metrics.linear_regression.rmse)
+                                }}</span>
+                        </div>
+                        <div class="metric-score-row">
+                            <span class="metric-score-label">R-Squared (R²) Score</span>
+                            <span class="metric-score-val">{{ "%.4f"|format(metadata.metrics.linear_regression.r2)
+                                }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="card" style="grid-column: 1 / -1;">
+                    <p style="text-align: center; color: var(--text-muted);">Training metrics metadata unavailable.
+                        Please run model training first.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Training Dataset Insights -->
+            <div class="card">
+                <h2 class="card-title"><i class="fa-solid fa-table-list"></i> Combined Training Dataset Statistics</h2>
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">
+                    Summary statistics calculated across all loaded air quality training datasets (Total Rows:
+                    <strong>{{ metadata.stats.count if metadata else 0 }}</strong>).
+                </p>
+                {% if metadata and metadata.stats %}
+                <div class="stats-table-container">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>Feature / Parameter</th>
+                                <th>Description / Unit</th>
+                                <th>Dataset Mean</th>
+                                <th>Min Recorded</th>
+                                <th>Max Recorded</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>PM10</strong></td>
+                                <td>Coarse Particulate Matter (µg/m³)</td>
+                                <td>{{ "%.2f"|format(metadata.stats.PM10.mean) }}</td>
+                                <td>{{ "%.2f"|format(metadata.stats.PM10.min) }}</td>
+                                <td>{{ "%.2f"|format(metadata.stats.PM10.max) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>NO2</strong></td>
+                                <td>Nitrogen Dioxide (ppb)</td>
+                                <td>{{ "%.2f"|format(metadata.stats.NO2.mean) }}</td>
+                                <td>{{ "%.2f"|format(metadata.stats.NO2.min) }}</td>
+                                <td>{{ "%.2f"|format(metadata.stats.NO2.max) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>SO2</strong></td>
+                                <td>Sulfur Dioxide (ppb)</td>
+                                <td>{{ "%.2f"|format(metadata.stats.SO2.mean) }}</td>
+                                <td>{{ "%.2f"|format(metadata.stats.SO2.min) }}</td>
+                                <td>{{ "%.2f"|format(metadata.stats.SO2.max) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>CO</strong></td>
+                                <td>Carbon Monoxide (ppm)</td>
+                                <td>{{ "%.3f"|format(metadata.stats.CO.mean) }}</td>
+                                <td>{{ "%.3f"|format(metadata.stats.CO.min) }}</td>
+                                <td>{{ "%.3f"|format(metadata.stats.CO.max) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>O3</strong></td>
+                                <td>Ground-level Ozone (ppb)</td>
+                                <td>{{ "%.2f"|format(metadata.stats.O3.mean) }}</td>
+                                <td>{{ "%.2f"|format(metadata.stats.O3.min) }}</td>
+                                <td>{{ "%.2f"|format(metadata.stats.O3.max) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>PM2.5 (Target)</strong></td>
+                                <td>Fine Particulate Matter (µg/m³)</td>
+                                <td>{{ "%.2f"|format(metadata.stats.PM2_5.mean) }}</td>
+                                <td>{{ "%.2f"|format(metadata.stats.PM2_5.min) }}</td>
+                                <td>{{ "%.2f"|format(metadata.stats.PM2_5.max) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Temperature</strong></td>
+                                <td>Ambient Temperature (°C)</td>
+                                <td>{{ "%.2f"|format(metadata.stats.temperature.mean) }}</td>
+                                <td>{{ "%.2f"|format(metadata.stats.temperature.min) }}</td>
+                                <td>{{ "%.2f"|format(metadata.stats.temperature.max) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Humidity</strong></td>
+                                <td>Relative Humidity (%)</td>
+                                <td>{{ "%.2f"|format(metadata.stats.humidity.mean) }}</td>
+                                <td>{{ "%.2f"|format(metadata.stats.humidity.min) }}</td>
+                                <td>{{ "%.2f"|format(metadata.stats.humidity.max) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Wind Speed</strong></td>
+                                <td>Atmospheric Wind Dispersion (m/s)</td>
+                                <td>{{ "%.2f"|format(metadata.stats.wind_speed.mean) }}</td>
+                                <td>{{ "%.2f"|format(metadata.stats.wind_speed.min) }}</td>
+                                <td>{{ "%.2f"|format(metadata.stats.wind_speed.max) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p style="text-align: center; color: var(--text-muted); padding: 20px;">Dataset statistics metadata
+                    unavailable.</p>
+                {% endif %}
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h4><i class="fa-solid fa-wind"></i> AQI Predictor & Simulator</h4>
+                <p style="margin-top: 10px;">
+                    An advanced environmental intelligence system employing Machine Learning (Random Forests & Gradient
+                    Boosts) to model micro-particulates, compute sub-index breakpoints, and deliver public health
+                    suggestions.
+                </p>
+            </div>
+            <div class="footer-col">
+                <h4>Core Technologies</h4>
+                <ul>
+                    <li><a href="#"><i class="fa-brands fa-python" style="color: var(--secondary);"></i> Python /
+                            Flask</a></li>
+                    <li><a href="#"><i class="fa-solid fa-brain" style="color: var(--primary);"></i> Scikit-Learn</a>
+                    </li>
+                    <li><a href="#"><i class="fa-solid fa-chart-simple" style="color: var(--primary);"></i> Chart.js /
+                            Canvas</a></li>
+                    <li><a href="#"><i class="fa-solid fa-code" style="color: var(--secondary);"></i> HTML5 / Modern
+                            CSS</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Project Developed By</h4>
+                <p><strong>Mr. Zille Kibriya</strong></p>
+                <p>Computer Science and Engineering</p>
+                <p style="color: var(--secondary); font-weight: 600;">Machine Learning Developer</p>
+            </div>
+        </div>
+        <div class="copyright-section">
+            <div>
+                &copy; 2026 AQI Predictor | Designed & Programmed by Mr. Zille Kibriya. All Rights Reserved.
+            </div>
+            <div>
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Script Section -->
+    <script>
+        // Tab switching logic
+        function switchTab(tabId) {
+            // Remove active class from all buttons and sections
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(section => section.classList.remove('active'));
+
+            // Set active classes
+            const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.innerText.toLowerCase().includes(tabId));
+            if (activeBtn) activeBtn.classList.add('active');
+
+            const targetSection = document.getElementById(`${tabId}-tab`);
+            if (targetSection) targetSection.classList.add('active');
+
+            // Re-render simulator state on tab load if on simulator
+            if (tabId === 'simulator') {
+                runSimulation();
+            }
+        }
+
+        // Helper to update slider labels
+        function updateSliderLabel(param, val) {
+            document.getElementById(`sim_val_${param}`).innerText = val;
+        }
+
+        // Dynamic Chart Handling
+        let predictorChartInstance = null;
+        let simulatorChartInstance = null;
+
+        function renderPollutantChart(canvasId, subIndicesData, isPredictor = true) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            const dataValues = [
+                subIndicesData.PM25,
+                subIndicesData.PM10,
+                subIndicesData.NO2,
+                subIndicesData.SO2,
+                subIndicesData.CO,
+                subIndicesData.O3
+            ];
+
+            const labels = ['PM2.5', 'PM10', 'NO2', 'SO2', 'CO', 'O3'];
+
+            // Colors matching categories
+            const backgroundColors = dataValues.map(val => {
+                if (val <= 50) return '#00e400';
+                if (val <= 100) return '#ffff00';
+                if (val <= 150) return '#ff7e00';
+                if (val <= 200) return '#ff0000';
+                if (val <= 300) return '#8f3f97';
+                return '#7e0023';
+            });
+
+            const config = {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Sub-Index Value',
+                        data: dataValues,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 1,
+                        borderRadius: 8,
+                        borderColor: 'rgba(255, 255, 255, 0.15)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    return `Sub-Index: ${context.raw}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: Math.max(300, ...dataValues) + 50,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#9ca3af' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#9ca3af' }
+                        }
+                    }
+                }
+            };
+
+            if (isPredictor) {
+                if (predictorChartInstance) predictorChartInstance.destroy();
+                predictorChartInstance = new Chart(ctx, config);
+            } else {
+                if (simulatorChartInstance) simulatorChartInstance.destroy();
+                simulatorChartInstance = new Chart(ctx, config);
+            }
+        }
+
+        // Run simulation using AJAX
+        async function runSimulation() {
+            const pm10 = parseFloat(document.getElementById('sim_pm10').value);
+            const no2 = parseFloat(document.getElementById('sim_no2').value);
+            const so2 = parseFloat(document.getElementById('sim_so2').value);
+            const co = parseFloat(document.getElementById('sim_co').value);
+            const o3 = parseFloat(document.getElementById('sim_o3').value);
+            const temp = parseFloat(document.getElementById('sim_temp').value);
+            const humidity = parseFloat(document.getElementById('sim_humidity').value);
+            const wind = parseFloat(document.getElementById('sim_wind').value);
+            const model_name = document.getElementById('sim_model').value;
+
+            try {
+                const response = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        PM10: pm10,
+                        NO2: no2,
+                        SO2: so2,
+                        CO: co,
+                        O3: o3,
+                        temperature: temp,
+                        humidity: humidity,
+                        wind_speed: wind,
+                        model_name: model_name
+                    })
+                });
+
+                const res = await response.json();
+                if (res.success) {
+                    const d = res.data;
+
+                    // Update UI elements
+                    document.getElementById('sim_aqi_val').innerText = d.overall_aqi;
+                    document.getElementById('sim_aqi_val').style.color = d.color;
+
+                    const statusBadge = document.getElementById('sim_status_badge');
+                    statusBadge.innerText = d.category;
+                    statusBadge.style.backgroundColor = d.color;
+
+                    document.getElementById('sim_desc_text').innerText = d.description;
+                    document.getElementById('sim_pm25_val').innerText = `${d.predicted_pm25.toFixed(2)} µg/m³`;
+                    document.getElementById('sim_dominant_val').innerText = d.dominant_pollutant;
+                    document.getElementById('sim_advice_text').innerText = d.advice;
+
+                    // Update dynamic gauge background
+                    const percent = d.overall_aqi * 0.2; // Map 0-500 to 0-100%
+                    document.getElementById('sim_gauge_outer').style.background = `conic-gradient(
+                        ${d.color} 0% ${percent}%, 
+                        rgba(255, 255, 255, 0.05) ${percent}% 100%
+                    )`;
+
+                    // Render Sub-index Bar Chart
+                    renderPollutantChart('simulatorPollutantChart', d.sub_indices, false);
+                }
+            } catch (err) {
+                console.error("Simulation request failed:", err);
+            }
+        }
+
+        // GPS Location Fetching
+        async function fetchGPSData(btnId, isPredictorTab = true) {
+            const btn = document.getElementById(btnId);
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Fetching environment data...`;
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    try {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+
+                        // Fetching weather and air quality from public APIs
+                        // 1. Weather
+                        const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m`);
+                        const weatherData = await weatherRes.json();
+
+                        // 2. Air Quality
+                        const aqiRes = await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=pm10,pm2_5,carbon_monoxide,nitrogen_dioxide,sulphur_dioxide,ozone`);
+                        const aqiData = await aqiRes.json();
+
+                        if (weatherData && weatherData.current && aqiData && aqiData.current) {
+                            const curWeather = weatherData.current;
+                            const curAqi = aqiData.current;
+
+                            // Map values (with sensible unit conversions if needed, open-meteo returns standard metrics)
+                            // PM10 is in µg/m³
+                            // NO2 is in µg/m³, need to convert roughly to ppb (1 µg/m³ ≈ 0.5 ppb)
+                            // SO2 is in µg/m³, need to convert roughly to ppb (1 µg/m³ ≈ 0.38 ppb)
+                            // CO is in µg/m³, need to convert to ppm (1 µg/m³ ≈ 0.00087 ppm)
+                            // O3 is in µg/m³, need to convert to ppb (1 µg/m³ ≈ 0.51 ppb)
+
+                            const pm10 = Math.round(curAqi.pm10 || 40);
+                            const pm25 = Math.round(curAqi.pm2_5 || 15);
+                            const no2 = Math.round((curAqi.nitrogen_dioxide || 25) * 0.5);
+                            const so2 = Math.round((curAqi.sulphur_dioxide || 5) * 0.38);
+                            const co = parseFloat(((curAqi.carbon_monoxide || 300) * 0.00087).toFixed(3));
+                            const o3 = Math.round((curAqi.ozone || 50) * 0.51);
+                            const temp = Math.round(curWeather.temperature_2m || 25);
+                            const humidity = Math.round(curWeather.relative_humidity_2m || 60);
+                            const wind = parseFloat((curWeather.wind_speed_10m || 3.0).toFixed(1));
+
+                            if (isPredictorTab) {
+                                document.getElementById('form_pm25').value = pm25;
+                                document.getElementById('form_pm10').value = pm10;
+                                document.getElementById('form_no2').value = no2;
+                                document.getElementById('form_so2').value = so2;
+                                document.getElementById('form_co').value = co;
+                                document.getElementById('form_o3').value = o3;
+                                document.getElementById('form_temp').value = temp;
+                                document.getElementById('form_humidity').value = humidity;
+                                document.getElementById('form_wind').value = wind;
+                            } else {
+                                // Update sliders & triggers
+                                document.getElementById('sim_pm10').value = pm10;
+                                document.getElementById('sim_no2').value = no2;
+                                document.getElementById('sim_so2').value = so2;
+                                document.getElementById('sim_co').value = co;
+                                document.getElementById('sim_o3').value = o3;
+                                document.getElementById('sim_temp').value = temp;
+                                document.getElementById('sim_humidity').value = humidity;
+                                document.getElementById('sim_wind').value = wind;
+
+                                updateSliderLabel('pm10', pm10);
+                                updateSliderLabel('no2', no2);
+                                updateSliderLabel('so2', so2);
+                                updateSliderLabel('co', co);
+                                updateSliderLabel('o3', o3);
+                                updateSliderLabel('temp', temp);
+                                updateSliderLabel('humidity', humidity);
+                                updateSliderLabel('wind', wind);
+
+                                runSimulation();
+                            }
+
+                            alert("Location parameters fetched and loaded successfully!");
+                        } else {
+                            alert("API error. Location parameters loaded to defaults.");
+                        }
+                    } catch (err) {
+                        console.error("GPS Fetch Error:", err);
+                        alert("Could not load location air quality metrics. Using defaults.");
+                    } finally {
+                        btn.innerHTML = originalText;
+                    }
+                }, (error) => {
+                    alert("Location access denied or timed out.");
+                    btn.innerHTML = originalText;
+                });
+            } else {
+                alert("Geolocation not supported by your browser.");
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // Initialize things on load
+        window.addEventListener('DOMContentLoaded', () => {
+            // Render Predictor tab chart if result data exists
+            const predictorDataEl = document.getElementById('predictor-data');
+            if (predictorDataEl) {
+                const subIndices = JSON.parse(predictorDataEl.textContent);
+                renderPollutantChart('predictorPollutantChart', subIndices, true);
+            }
+
+            // Apply dynamic styles to predictor result elements
+            const predGauge = document.querySelector('#predictorResultsCard .aqi-gauge-outer[data-aqi]');
+            if (predGauge) {
+                const aqi = parseFloat(predGauge.dataset.aqi);
+                const color = predGauge.dataset.color;
+                const pct = Math.min(aqi * 0.2, 100);
+                predGauge.style.background = `conic-gradient(${color} 0% ${pct}%, rgba(255,255,255,0.05) ${pct}% 100%)`;
+                // Apply color to AQI value text
+                const aqiVal = predGauge.querySelector('.aqi-value[data-color]');
+                if (aqiVal) aqiVal.style.color = aqiVal.dataset.color;
+            }
+            // Apply background-color to status badge
+            const predBadge = document.querySelector('#predictorResultsCard .aqi-status-text[data-bg-color]');
+            if (predBadge) {
+                predBadge.style.backgroundColor = predBadge.dataset.bgColor;
+                predBadge.style.color = '#030712';
+            }
+
+        // Listeners for GPS autofills
+        document.getElementById('autoFetchPredictor').addEventListener('click', () => fetchGPSData('autoFetchPredictor', true));
+        document.getElementById('autoFetchSimulator').addEventListener('click', () => fetchGPSData('autoFetchSimulator', false));
+        });
+    </script>
+</body>
+
+</html>
